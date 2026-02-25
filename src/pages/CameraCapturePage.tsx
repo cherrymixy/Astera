@@ -20,45 +20,25 @@ export default function CameraCapturePage() {
     const [recognizing, setRecognizing] = useState(false);
     const [recognized, setRecognized] = useState<RecognizedObject | null>(null);
 
-    // 카메라 시작 (후면 → 전면 → 아무 카메라 순서로 시도)
+    // 카메라 시작
     const startCamera = async () => {
-        const constraints = [
-            { video: { facingMode: 'environment' } },
-            { video: { facingMode: 'user' } },
-            { video: true },
-        ];
-
-        for (const constraint of constraints) {
-            try {
-                const mediaStream = await navigator.mediaDevices.getUserMedia(constraint);
-                if (videoRef.current) {
-                    videoRef.current.srcObject = mediaStream;
-                    // 비디오가 로드될 때까지 대기
-                    await new Promise<void>((resolve) => {
-                        videoRef.current!.onloadedmetadata = () => {
-                            videoRef.current!.play();
-                            resolve();
-                        };
-                    });
-                }
-                setStream(mediaStream);
-                setCameraActive(true);
-                return;
-            } catch {
-                continue;
+        try {
+            const mediaStream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
+            });
+            if (videoRef.current) {
+                videoRef.current.srcObject = mediaStream;
             }
+            setStream(mediaStream);
+            setCameraActive(true);
+        } catch {
+            alert('카메라 접근 권한이 필요합니다.');
         }
-        // 모든 시도 실패 — 갤러리로 안내
-        alert('카메라를 사용할 수 없습니다. 갤러리에서 이미지를 선택해주세요.');
-        fileInputRef.current?.click();
     };
 
     // 카메라 중지
     const stopCamera = () => {
         stream?.getTracks().forEach(t => t.stop());
-        if (videoRef.current) {
-            videoRef.current.srcObject = null;
-        }
         setStream(null);
         setCameraActive(false);
     };
@@ -67,7 +47,6 @@ export default function CameraCapturePage() {
     const capturePhoto = () => {
         if (!videoRef.current || !canvasRef.current) return;
         const video = videoRef.current;
-        if (video.videoWidth === 0) return; // 아직 준비 안 됨
         const canvas = canvasRef.current;
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
@@ -273,7 +252,7 @@ export default function CameraCapturePage() {
                             marginBottom: '1.5rem', border: '1px solid rgba(100, 130, 255, 0.15)',
                             position: 'relative',
                         }}>
-                            <video ref={videoRef} autoPlay playsInline muted style={{ width: '100%', display: 'block' }} />
+                            <video ref={videoRef} autoPlay playsInline style={{ width: '100%', display: 'block' }} />
                         </div>
                         <button
                             onClick={capturePhoto}
@@ -337,7 +316,6 @@ export default function CameraCapturePage() {
                                 ref={fileInputRef}
                                 type="file"
                                 accept="image/*"
-                                capture="environment"
                                 onChange={handleFileSelect}
                                 style={{ display: 'none' }}
                             />
