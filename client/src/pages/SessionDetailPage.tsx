@@ -38,7 +38,7 @@ export default function SessionDetailPage() {
             })
             .catch(() => {
                 alert('별자리를 찾을 수 없습니다.');
-                navigate('/');
+                navigate('/home');
             })
             .finally(() => setLoading(false));
     }, [id, navigate]);
@@ -58,7 +58,7 @@ export default function SessionDetailPage() {
         if (!confirm('이 별자리를 삭제할까요?')) return;
         try {
             await fetchAPI(`/api/sessions/${id}`, { method: 'DELETE' });
-            navigate('/');
+            navigate('/home');
         } catch (err: any) {
             alert('삭제에 실패했습니다: ' + (err.message || ''));
         }
@@ -82,7 +82,7 @@ export default function SessionDetailPage() {
             <div style={{ maxWidth: '900px', margin: '0 auto', padding: '2rem 1.5rem' }}>
                 {/* 헤더 */}
                 <div style={{ marginBottom: '2rem' }}>
-                    <Link to="/" style={{
+                    <Link to="/home" style={{
                         color: 'rgba(200, 210, 255, 0.5)', fontSize: '0.9rem',
                         display: 'flex', alignItems: 'center', gap: '0.5rem',
                         textDecoration: 'none',

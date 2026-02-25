@@ -128,7 +128,7 @@ export default function NewSessionPage() {
                 background: 'rgba(10, 10, 30, 0.8)',
                 backdropFilter: 'blur(12px)',
             }}>
-                <Link to="/" style={{
+                <Link to="/home" style={{
                     color: 'rgba(200, 210, 255, 0.6)',
                     fontSize: '0.9rem',
                     display: 'flex',

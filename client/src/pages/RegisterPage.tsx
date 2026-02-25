@@ -17,7 +17,7 @@ export default function RegisterPage() {
         setLoading(true);
         try {
             await register(email, password, name);
-            navigate('/');
+            navigate('/home');
         } catch (err: any) {
             setError(err.message || '회원가입에 실패했습니다.');
         } finally {
