@@ -32,13 +32,11 @@ input {
   font-family: inherit;
 }
 
-/* 선택 방지 (캔버스 위) */
 canvas {
   user-select: none;
   -webkit-user-select: none;
 }
 
-/* 스크롤바 스타일링 */
 ::-webkit-scrollbar {
   width: 6px;
 }
@@ -56,7 +54,6 @@ canvas {
   background: rgba(100, 130, 255, 0.25);
 }
 
-/* 글로벌 애니메이션 */
 @keyframes twinkle {
   0%, 100% { opacity: 0.3; }
   50% { opacity: 1; }
@@ -67,12 +64,16 @@ canvas {
   to { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateX(-50%) translateY(10px); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
 @keyframes pulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.3; }
 }
 
-/* 유틸리티 */
 ::selection {
   background: rgba(100, 130, 255, 0.3);
   color: #ffffff;

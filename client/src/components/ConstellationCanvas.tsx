@@ -1,17 +1,13 @@
-'use client';
-
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
-import { Star, Connection } from '@/types';
+import { Star, Connection } from '../types';
 
 interface ConstellationCanvasProps {
     stars: Star[];
     connections: Connection[];
     animated?: boolean;
     interactive?: boolean;
-    className?: string;
 }
 
-// 배경 별 데이터 생성 (고정)
 function generateBackgroundStars(count: number, w: number, h: number) {
     const bgStars: { x: number; y: number; size: number; twinkleSpeed: number; twinkleOffset: number }[] = [];
     for (let i = 0; i < count; i++) {
@@ -38,13 +34,11 @@ export default function ConstellationCanvas({
     const mouseRef = useRef<{ x: number; y: number; active: boolean }>({ x: 0, y: 0, active: false });
     const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
 
-    // 배경 별 메모이제이션
     const backgroundStars = useMemo(
         () => generateBackgroundStars(120, dimensions.width, dimensions.height),
         [dimensions.width, dimensions.height]
     );
 
-    // 반응형 크기 조절
     useEffect(() => {
         const updateDimensions = () => {
             if (containerRef.current) {
@@ -66,7 +60,6 @@ export default function ConstellationCanvas({
 
     const { width, height } = dimensions;
 
-    // 마우스/터치 이벤트
     const handleMouseMove = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
         const rect = canvasRef.current?.getBoundingClientRect();
         if (!rect) return;
@@ -88,7 +81,6 @@ export default function ConstellationCanvas({
         mouseRef.current.active = false;
     }, []);
 
-    // 스타 맵 (lookup)
     const starMap = useMemo(() => {
         const map = new Map<string, Star>();
         stars.forEach(s => map.set(s.id, s));
@@ -106,13 +98,12 @@ export default function ConstellationCanvas({
         canvas.height = height * dpr;
         ctx.scale(dpr, dpr);
 
-        let startTime = performance.now();
+        const startTime = performance.now();
 
         const animate = (currentTime: number) => {
             const time = (currentTime - startTime) * 0.001;
             const mouse = mouseRef.current;
 
-            // === 배경: 깊은 우주 ===
             const bgGrad = ctx.createRadialGradient(
                 width * 0.5, height * 0.4, 0,
                 width * 0.5, height * 0.4, Math.max(width, height) * 0.8
@@ -123,7 +114,6 @@ export default function ConstellationCanvas({
             ctx.fillStyle = bgGrad;
             ctx.fillRect(0, 0, width, height);
 
-            // === 배경 별 (작은 점들) ===
             backgroundStars.forEach(bg => {
                 const alpha = animated
                     ? 0.3 + 0.5 * Math.sin(time * bg.twinkleSpeed + bg.twinkleOffset) ** 2
@@ -136,13 +126,11 @@ export default function ConstellationCanvas({
             });
             ctx.globalAlpha = 1;
 
-            // === 연결선 그리기 ===
             connections.forEach(conn => {
                 const fromStar = starMap.get(conn.from);
                 const toStar = starMap.get(conn.to);
                 if (!fromStar || !toStar) return;
 
-                // 스케일링
                 const fx = (fromStar.x / 800) * width;
                 const fy = (fromStar.y / 600) * height;
                 const tx = (toStar.x / 800) * width;
@@ -163,12 +151,10 @@ export default function ConstellationCanvas({
                 ctx.restore();
             });
 
-            // === 별 그리기 ===
             stars.forEach((star, idx) => {
                 const sx = (star.x / 800) * width;
                 const sy = (star.y / 600) * height;
 
-                // 마우스 호버 감지
                 let isHovered = false;
                 let hoverInfluence = 0;
                 if (interactive && mouse.active) {
@@ -181,13 +167,11 @@ export default function ConstellationCanvas({
                     }
                 }
 
-                // 별 크기 (반짝임 + 호버)
                 const baseSize = star.size * 3;
                 const twinkle = animated ? Math.sin(time * 2 + idx * 1.5) * 0.5 + 0.5 : 0.7;
                 const hoverScale = isHovered ? 1 + hoverInfluence * 0.8 : 1;
                 const renderSize = (baseSize + twinkle * 2) * hoverScale;
 
-                // 글로우 효과
                 ctx.save();
                 const glowRadius = renderSize * 4;
                 const glow = ctx.createRadialGradient(sx, sy, 0, sx, sy, glowRadius);
@@ -198,7 +182,6 @@ export default function ConstellationCanvas({
                 ctx.fillStyle = glow;
                 ctx.fillRect(sx - glowRadius, sy - glowRadius, glowRadius * 2, glowRadius * 2);
 
-                // 별 본체
                 ctx.globalAlpha = star.brightness;
                 ctx.fillStyle = isHovered ? '#ffffff' : `hsl(220, ${60 + idx * 5}%, ${80 + twinkle * 15}%)`;
                 ctx.shadowColor = 'rgba(200, 220, 255, 0.8)';
@@ -207,7 +190,6 @@ export default function ConstellationCanvas({
                 ctx.arc(sx, sy, renderSize, 0, Math.PI * 2);
                 ctx.fill();
 
-                // 십자 광선 (큰 별에만)
                 if (star.size > 1.5) {
                     ctx.globalAlpha = (0.3 + twinkle * 0.2) * star.brightness;
                     ctx.strokeStyle = 'rgba(200, 220, 255, 0.6)';
@@ -221,7 +203,6 @@ export default function ConstellationCanvas({
                     ctx.stroke();
                 }
 
-                // 키워드 라벨
                 const showLabel = isHovered || !animated;
                 if (showLabel) {
                     ctx.globalAlpha = isHovered ? 1 : 0.7;
@@ -236,7 +217,6 @@ export default function ConstellationCanvas({
                 ctx.restore();
             });
 
-            // === 마우스 커서 글로우 ===
             if (interactive && mouse.active) {
                 ctx.save();
                 const cursorGlow = ctx.createRadialGradient(
@@ -250,7 +230,6 @@ export default function ConstellationCanvas({
                 ctx.restore();
             }
 
-            // === 비네트 ===
             const vignette = ctx.createRadialGradient(
                 width / 2, height / 2, Math.min(width, height) * 0.35,
                 width / 2, height / 2, Math.min(width, height) * 0.75

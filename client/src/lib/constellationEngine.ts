@@ -3,7 +3,7 @@
  * 별 배치, 별 연결, 키워드 추출 유틸리티
  */
 
-import { Star, Connection } from '@/types';
+import { Star, Connection } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 
 // 불용어 (필터링 대상)
