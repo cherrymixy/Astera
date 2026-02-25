@@ -11,6 +11,7 @@ interface RecognizedObject {
 export default function CameraCapturePage() {
     const navigate = useNavigate();
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const cameraInputRef = useRef<HTMLInputElement>(null);
 
     const [capturedImage, setCapturedImage] = useState<string | null>(null);
     const [recognizing, setRecognizing] = useState(false);
@@ -177,13 +178,21 @@ export default function CameraCapturePage() {
                         </div>
 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', width: '100%', maxWidth: '320px' }}>
-                            <button onClick={() => fileInputRef.current?.click()} style={{
+                            <button onClick={() => cameraInputRef.current?.click()} style={{
                                 padding: '1rem 2rem', fontSize: '1rem', fontWeight: '500',
                                 background: 'linear-gradient(135deg, rgba(100, 130, 255, 0.25) 0%, rgba(150, 100, 255, 0.25) 100%)',
                                 border: '1px solid rgba(150, 170, 255, 0.3)',
                                 borderRadius: '14px', color: '#e0e8ff', cursor: 'pointer', fontFamily: 'inherit',
                                 boxShadow: '0 4px 20px rgba(100, 130, 255, 0.1)',
-                            }}>🖼️ 사진 선택하기</button>
+                            }}>📷 카메라로 촬영</button>
+                            <button onClick={() => fileInputRef.current?.click()} style={{
+                                padding: '1rem 2rem', fontSize: '1rem',
+                                background: 'rgba(255, 255, 255, 0.05)',
+                                border: '1px solid rgba(255, 255, 255, 0.1)',
+                                borderRadius: '14px', color: 'rgba(200, 210, 255, 0.6)',
+                                cursor: 'pointer', fontFamily: 'inherit',
+                            }}>🖼️ 갤러리에서 선택</button>
+                            <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" onChange={handleFileSelect} style={{ display: 'none' }} />
                             <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileSelect} style={{ display: 'none' }} />
                         </div>
 
