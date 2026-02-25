@@ -29,7 +29,10 @@ export default function SessionDetailPage() {
                     setStars(constellation.stars || []);
                     setConnections(constellation.connections || []);
 
-                    if (data.reasoningText) {
+                    // AI 생성 철학자가 있으면 사용, 없으면 로컬 fallback
+                    if ((constellation as any).philosophers?.length > 0) {
+                        setPhilosophers((constellation as any).philosophers);
+                    } else if (data.reasoningText) {
                         setPhilosophers(recommendPhilosophers(data.reasoningText));
                     }
                 } catch {

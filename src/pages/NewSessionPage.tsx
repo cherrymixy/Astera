@@ -2,7 +2,6 @@ import { useRef, useState, useCallback, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Star, Connection, ConstellationData } from '../types';
 import { placeStar, autoConnect, extractKeywords, generateTitle } from '../lib/constellationEngine';
-import { generateConstellationReasoning } from '../lib/reasoning';
 import { fetchAPI } from '../api/client';
 import ConstellationCanvas from '../components/ConstellationCanvas';
 import { SpeechRecognitionService } from '../lib/stt';
@@ -53,6 +52,28 @@ export default function NewSessionPage() {
         }
     };
 
+    // AI 키워드 추출 (문장 완성 시 호출)
+    const extractWithAI = useCallback(async (sentence: string) => {
+        try {
+            const existingKeywords = stars.map(s => s.keyword);
+            const res = await fetchAPI<{ success: boolean; data: { keywords: string[] } }>(
+                '/api/ai/extract-keywords',
+                {
+                    method: 'POST',
+                    body: JSON.stringify({ sentence, existingKeywords }),
+                }
+            );
+            if (res.data.keywords?.length > 0) {
+                res.data.keywords.forEach(k => addStar(k));
+            }
+        } catch (err) {
+            // AI 실패 시 로컬 fallback
+            console.warn('AI 추출 실패, 로컬 fallback:', err);
+            const keywords = extractKeywords(sentence);
+            keywords.forEach(k => addStar(k));
+        }
+    }, [stars, addStar]);
+
     // 음성 녹음
     const handleToggleRecording = async () => {
         if (isRecording) {
@@ -67,9 +88,8 @@ export default function NewSessionPage() {
                 const stt = new SpeechRecognitionService();
                 stt.start((sentence, fullText) => {
                     transcriptRef.current = fullText;
-                    // 완성된 문장에서 핵심 키워드 1~2개만 추출
-                    const keywords = extractKeywords(sentence);
-                    keywords.forEach(k => addStar(k));
+                    // AI로 핵심 키워드 추출
+                    extractWithAI(sentence);
                 });
                 sttRef.current = stt;
                 setIsRecording(true);
@@ -80,7 +100,7 @@ export default function NewSessionPage() {
         }
     };
 
-    // 저장 (API 호출)
+    // 저장 (AI 사유 생성 + API 호출)
     const handleFinish = async () => {
         if (stars.length === 0) {
             alert('키워드를 최소 1개 이상 추가해주세요.');
@@ -94,7 +114,24 @@ export default function NewSessionPage() {
         const constellation: ConstellationData = { stars, connections };
         const title = generateTitle(stars);
         const keywords = stars.map(s => s.keyword);
-        const reasoningText = generateConstellationReasoning(keywords);
+
+        // AI로 사유 + 철학자 생성
+        let reasoningText = '';
+        try {
+            const aiRes = await fetchAPI<{ success: boolean; data: { reasoning: string; philosophers: any[] } }>(
+                '/api/ai/generate-reasoning',
+                {
+                    method: 'POST',
+                    body: JSON.stringify({ keywords, transcript: transcriptRef.current }),
+                }
+            );
+            reasoningText = aiRes.data.reasoning;
+            // 철학자 정보를 constellation에 포함
+            (constellation as any).philosophers = aiRes.data.philosophers;
+        } catch (err) {
+            console.warn('AI 사유 생성 실패:', err);
+            reasoningText = `${keywords.join(', ')} — 이 별들이 만드는 별자리는 당신만의 사유 지도이다.`;
+        }
 
         try {
             const res = await fetchAPI<{ success: boolean; data: { id: string } }>('/api/sessions', {
