@@ -1,51 +1,41 @@
 /**
  * Web Speech API를 사용한 음성 인식 (STT)
- * 화면에 텍스트를 표시하지 않고 내부적으로만 사용
+ * 문장이 완성될 때만 콜백을 호출
  */
 
 export class SpeechRecognitionService {
   private recognition: any = null;
-  private transcript = '';
+  private fullTranscript = '';
   private isActive = false;
-  private onTranscriptUpdate?: (text: string) => void;
+  private onSentenceComplete?: (sentence: string, fullText: string) => void;
 
   constructor() {
-    // 브라우저 호환성 확인
-    const SpeechRecognition = (window as any).SpeechRecognition || 
-                             (window as any).webkitSpeechRecognition;
-    
+    const SpeechRecognition = (window as any).SpeechRecognition ||
+      (window as any).webkitSpeechRecognition;
+
     if (!SpeechRecognition) {
       console.warn('Speech Recognition API를 지원하지 않는 브라우저입니다.');
       return;
     }
 
     this.recognition = new SpeechRecognition();
-    this.recognition.continuous = true; // 연속 인식
-    this.recognition.interimResults = true; // 중간 결과도 받기
-    this.recognition.lang = 'ko-KR'; // 한국어
+    this.recognition.continuous = true;
+    this.recognition.interimResults = false; // 최종 결과만 받기
+    this.recognition.lang = 'ko-KR';
 
     this.recognition.onresult = (event: any) => {
-      let interimTranscript = '';
-      let finalTranscript = '';
-
       for (let i = event.resultIndex; i < event.results.length; i++) {
-        const transcript = event.results[i][0].transcript;
         if (event.results[i].isFinal) {
-          finalTranscript += transcript + ' ';
-        } else {
-          interimTranscript += transcript;
-        }
-      }
+          const sentence = event.results[i][0].transcript.trim();
+          if (sentence.length > 0) {
+            this.fullTranscript += sentence + ' ';
+            console.log('[STT] 문장 완성:', sentence);
 
-      this.transcript = finalTranscript + interimTranscript;
-      
-      // 디버깅: 인식된 텍스트 로깅
-      if (finalTranscript) {
-        console.log('[STT] 최종 인식:', finalTranscript);
-      }
-      
-      if (this.onTranscriptUpdate) {
-        this.onTranscriptUpdate(this.transcript);
+            if (this.onSentenceComplete) {
+              this.onSentenceComplete(sentence, this.fullTranscript);
+            }
+          }
+        }
       }
     };
 
@@ -54,7 +44,6 @@ export class SpeechRecognitionService {
     };
 
     this.recognition.onend = () => {
-      // 자동으로 재시작 (연속 인식을 위해)
       if (this.isActive) {
         try {
           this.recognition.start();
@@ -67,15 +56,16 @@ export class SpeechRecognitionService {
 
   /**
    * 음성 인식 시작
+   * onSentenceComplete: 문장이 완성될 때마다 호출 (문장, 전체 텍스트)
    */
-  start(onTranscriptUpdate?: (text: string) => void): void {
+  start(onSentenceComplete?: (sentence: string, fullText: string) => void): void {
     if (!this.recognition) {
       console.warn('Speech Recognition을 사용할 수 없습니다.');
       return;
     }
 
-    this.onTranscriptUpdate = onTranscriptUpdate;
-    this.transcript = '';
+    this.onSentenceComplete = onSentenceComplete;
+    this.fullTranscript = '';
     this.isActive = true;
 
     try {
@@ -85,9 +75,6 @@ export class SpeechRecognitionService {
     }
   }
 
-  /**
-   * 음성 인식 중지
-   */
   stop(): void {
     this.isActive = false;
     if (this.recognition) {
@@ -99,20 +86,12 @@ export class SpeechRecognitionService {
     }
   }
 
-  /**
-   * 현재까지 인식된 텍스트 반환
-   */
   getTranscript(): string {
-    return this.transcript;
+    return this.fullTranscript;
   }
 
-  /**
-   * 지원 여부 확인
-   */
   static isSupported(): boolean {
-    return !!(window as any).SpeechRecognition || 
-           !!(window as any).webkitSpeechRecognition;
+    return !!(window as any).SpeechRecognition ||
+      !!(window as any).webkitSpeechRecognition;
   }
 }
-
-

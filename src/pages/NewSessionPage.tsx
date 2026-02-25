@@ -65,9 +65,10 @@ export default function NewSessionPage() {
             }
             try {
                 const stt = new SpeechRecognitionService();
-                stt.start((text) => {
-                    transcriptRef.current = text;
-                    const keywords = extractKeywords(text);
+                stt.start((sentence, fullText) => {
+                    transcriptRef.current = fullText;
+                    // 완성된 문장에서 핵심 키워드 1~2개만 추출
+                    const keywords = extractKeywords(sentence);
                     keywords.forEach(k => addStar(k));
                 });
                 sttRef.current = stt;
