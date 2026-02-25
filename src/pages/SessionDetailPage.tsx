@@ -19,8 +19,9 @@ export default function SessionDetailPage() {
     useEffect(() => {
         if (!id) return;
 
-        fetchAPI<{ session: SessionData }>(`/api/sessions/${id}`)
-            .then(({ session: data }) => {
+        fetchAPI<{ success: boolean; data: SessionData }>(`/api/sessions/${id}`)
+            .then(res => {
+                const data = res.data;
                 setSession(data);
 
                 try {

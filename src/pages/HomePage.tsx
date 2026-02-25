@@ -10,8 +10,8 @@ export default function HomePage() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        fetchAPI<{ sessions: SessionData[] }>('/api/sessions')
-            .then(({ sessions }) => setSessions(sessions))
+        fetchAPI<{ success: boolean; data: SessionData[] }>('/api/sessions')
+            .then(res => setSessions(res.data))
             .catch(console.error)
             .finally(() => setLoading(false));
     }, []);

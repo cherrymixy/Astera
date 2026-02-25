@@ -1,5 +1,3 @@
-const API_URL = import.meta.env.VITE_API_URL || '';
-
 function getToken(): string | null {
     return localStorage.getItem('auth_token');
 }
@@ -26,7 +24,7 @@ export async function fetchAPI<T = any>(
         headers['Authorization'] = `Bearer ${token}`;
     }
 
-    const res = await fetch(`${API_URL}${path}`, {
+    const res = await fetch(path, {
         ...options,
         headers,
     });

@@ -16,7 +16,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
 
-    // 새로고침 시 토큰 검증
     useEffect(() => {
         const token = localStorage.getItem('auth_token');
         if (!token) {
@@ -24,30 +23,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             return;
         }
 
-        fetchAPI<{ user: User }>('/api/auth/me')
-            .then(({ user }) => setUser(user))
-            .catch(() => {
-                clearToken();
-            })
+        fetchAPI<{ success: boolean; data: User }>('/api/auth/me')
+            .then(res => setUser(res.data))
+            .catch(() => clearToken())
             .finally(() => setLoading(false));
     }, []);
 
     const login = async (email: string, password: string) => {
-        const { token, user } = await fetchAPI<{ token: string; user: User }>(
+        const res = await fetchAPI<{ success: boolean; data: { token: string; user: User } }>(
             '/api/auth/login',
             { method: 'POST', body: JSON.stringify({ email, password }) }
         );
-        setToken(token);
-        setUser(user);
+        setToken(res.data.token);
+        setUser(res.data.user);
     };
 
     const register = async (email: string, password: string, name: string) => {
-        const { token, user } = await fetchAPI<{ token: string; user: User }>(
+        const res = await fetchAPI<{ success: boolean; data: { token: string; user: User } }>(
             '/api/auth/register',
             { method: 'POST', body: JSON.stringify({ email, password, name }) }
         );
-        setToken(token);
-        setUser(user);
+        setToken(res.data.token);
+        setUser(res.data.user);
     };
 
     const logout = () => {

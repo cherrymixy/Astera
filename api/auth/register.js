@@ -1,0 +1,51 @@
+const bcrypt = require('bcryptjs');
+const { v4: uuidv4 } = require('uuid');
+const { getDb } = require('../../lib/db');
+const { createToken } = require('../../lib/auth');
+
+module.exports = async function handler(req, res) {
+    if (req.method === 'OPTIONS') return res.status(200).end();
+    if (req.method !== 'POST') return res.status(405).json({ success: false, error: 'Method not allowed' });
+
+    try {
+        const db = getDb();
+        const { name, email, password } = req.body || {};
+
+        if (!name || !email || !password) {
+            return res.status(400).json({ success: false, error: '이름, 이메일, 비밀번호는 필수입니다.' });
+        }
+
+        if (password.length < 6) {
+            return res.status(400).json({ success: false, error: '비밀번호는 6자 이상이어야 합니다.' });
+        }
+
+        const { data: existing } = await db
+            .from('users')
+            .select('id')
+            .eq('email', email)
+            .single();
+
+        if (existing) {
+            return res.status(409).json({ success: false, error: '이미 사용 중인 이메일입니다.' });
+        }
+
+        const id = uuidv4();
+        const passwordHash = await bcrypt.hash(password, 10);
+
+        const { error } = await db
+            .from('users')
+            .insert({ id, email, password_hash: passwordHash, name });
+
+        if (error) throw error;
+
+        const token = createToken({ id, name, email });
+
+        res.status(201).json({
+            success: true,
+            data: { token, user: { id, name, email } }
+        });
+    } catch (error) {
+        console.error('Register error:', error);
+        res.status(500).json({ success: false, error: '서버 오류가 발생했습니다.' });
+    }
+};

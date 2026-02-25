@@ -96,7 +96,7 @@ export default function NewSessionPage() {
         const reasoningText = generateConstellationReasoning(keywords);
 
         try {
-            const { session } = await fetchAPI<{ session: { id: string } }>('/api/sessions', {
+            const res = await fetchAPI<{ success: boolean; data: { id: string } }>('/api/sessions', {
                 method: 'POST',
                 body: JSON.stringify({
                     title,
@@ -105,7 +105,7 @@ export default function NewSessionPage() {
                     transcriptText: transcriptRef.current,
                 }),
             });
-            navigate(`/session/${session.id}`);
+            navigate(`/session/${res.data.id}`);
         } catch (err: any) {
             alert('저장에 실패했습니다: ' + (err.message || ''));
             setSaving(false);
