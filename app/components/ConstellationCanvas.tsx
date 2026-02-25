@@ -1,0 +1,301 @@
+'use client';
+
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
+import { Star, Connection } from '@/types';
+
+interface ConstellationCanvasProps {
+    stars: Star[];
+    connections: Connection[];
+    animated?: boolean;
+    interactive?: boolean;
+    className?: string;
+}
+
+// 배경 별 데이터 생성 (고정)
+function generateBackgroundStars(count: number, w: number, h: number) {
+    const bgStars: { x: number; y: number; size: number; twinkleSpeed: number; twinkleOffset: number }[] = [];
+    for (let i = 0; i < count; i++) {
+        bgStars.push({
+            x: Math.random() * w,
+            y: Math.random() * h,
+            size: Math.random() * 1.5 + 0.3,
+            twinkleSpeed: 0.5 + Math.random() * 2,
+            twinkleOffset: Math.random() * Math.PI * 2,
+        });
+    }
+    return bgStars;
+}
+
+export default function ConstellationCanvas({
+    stars,
+    connections,
+    animated = true,
+    interactive = true,
+}: ConstellationCanvasProps) {
+    const containerRef = useRef<HTMLDivElement>(null);
+    const canvasRef = useRef<HTMLCanvasElement>(null);
+    const animationRef = useRef<number | null>(null);
+    const mouseRef = useRef<{ x: number; y: number; active: boolean }>({ x: 0, y: 0, active: false });
+    const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
+
+    // 배경 별 메모이제이션
+    const backgroundStars = useMemo(
+        () => generateBackgroundStars(120, dimensions.width, dimensions.height),
+        [dimensions.width, dimensions.height]
+    );
+
+    // 반응형 크기 조절
+    useEffect(() => {
+        const updateDimensions = () => {
+            if (containerRef.current) {
+                const containerWidth = containerRef.current.offsetWidth;
+                const maxWidth = Math.min(containerWidth, 900);
+                const height = Math.min(maxWidth * 0.65, 600);
+                setDimensions({ width: maxWidth, height });
+            }
+        };
+        updateDimensions();
+        window.addEventListener('resize', updateDimensions);
+        const resizeObserver = new ResizeObserver(updateDimensions);
+        if (containerRef.current) resizeObserver.observe(containerRef.current);
+        return () => {
+            window.removeEventListener('resize', updateDimensions);
+            resizeObserver.disconnect();
+        };
+    }, []);
+
+    const { width, height } = dimensions;
+
+    // 마우스/터치 이벤트
+    const handleMouseMove = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
+        const rect = canvasRef.current?.getBoundingClientRect();
+        if (!rect) return;
+        mouseRef.current = { x: e.clientX - rect.left, y: e.clientY - rect.top, active: true };
+    }, []);
+
+    const handleMouseLeave = useCallback(() => {
+        mouseRef.current.active = false;
+    }, []);
+
+    const handleTouchMove = useCallback((e: React.TouchEvent<HTMLCanvasElement>) => {
+        const rect = canvasRef.current?.getBoundingClientRect();
+        if (!rect || e.touches.length === 0) return;
+        const touch = e.touches[0];
+        mouseRef.current = { x: touch.clientX - rect.left, y: touch.clientY - rect.top, active: true };
+    }, []);
+
+    const handleTouchEnd = useCallback(() => {
+        mouseRef.current.active = false;
+    }, []);
+
+    // 스타 맵 (lookup)
+    const starMap = useMemo(() => {
+        const map = new Map<string, Star>();
+        stars.forEach(s => map.set(s.id, s));
+        return map;
+    }, [stars]);
+
+    useEffect(() => {
+        const canvas = canvasRef.current;
+        if (!canvas || width === 0 || height === 0) return;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = width * dpr;
+        canvas.height = height * dpr;
+        ctx.scale(dpr, dpr);
+
+        let startTime = performance.now();
+
+        const animate = (currentTime: number) => {
+            const time = (currentTime - startTime) * 0.001;
+            const mouse = mouseRef.current;
+
+            // === 배경: 깊은 우주 ===
+            const bgGrad = ctx.createRadialGradient(
+                width * 0.5, height * 0.4, 0,
+                width * 0.5, height * 0.4, Math.max(width, height) * 0.8
+            );
+            bgGrad.addColorStop(0, '#0d0d2b');
+            bgGrad.addColorStop(0.5, '#080820');
+            bgGrad.addColorStop(1, '#04040f');
+            ctx.fillStyle = bgGrad;
+            ctx.fillRect(0, 0, width, height);
+
+            // === 배경 별 (작은 점들) ===
+            backgroundStars.forEach(bg => {
+                const alpha = animated
+                    ? 0.3 + 0.5 * Math.sin(time * bg.twinkleSpeed + bg.twinkleOffset) ** 2
+                    : 0.5;
+                ctx.globalAlpha = alpha;
+                ctx.fillStyle = '#ffffff';
+                ctx.beginPath();
+                ctx.arc(bg.x, bg.y, bg.size, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            ctx.globalAlpha = 1;
+
+            // === 연결선 그리기 ===
+            connections.forEach(conn => {
+                const fromStar = starMap.get(conn.from);
+                const toStar = starMap.get(conn.to);
+                if (!fromStar || !toStar) return;
+
+                // 스케일링
+                const fx = (fromStar.x / 800) * width;
+                const fy = (fromStar.y / 600) * height;
+                const tx = (toStar.x / 800) * width;
+                const ty = (toStar.y / 600) * height;
+
+                ctx.save();
+                ctx.globalAlpha = animated
+                    ? 0.25 + 0.1 * Math.sin(time * 0.8)
+                    : 0.3;
+                ctx.strokeStyle = 'rgba(180, 200, 255, 0.5)';
+                ctx.lineWidth = 1;
+                ctx.shadowColor = 'rgba(150, 180, 255, 0.3)';
+                ctx.shadowBlur = 4;
+                ctx.beginPath();
+                ctx.moveTo(fx, fy);
+                ctx.lineTo(tx, ty);
+                ctx.stroke();
+                ctx.restore();
+            });
+
+            // === 별 그리기 ===
+            stars.forEach((star, idx) => {
+                const sx = (star.x / 800) * width;
+                const sy = (star.y / 600) * height;
+
+                // 마우스 호버 감지
+                let isHovered = false;
+                let hoverInfluence = 0;
+                if (interactive && mouse.active) {
+                    const dx = mouse.x - sx;
+                    const dy = mouse.y - sy;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist < 80) {
+                        isHovered = true;
+                        hoverInfluence = 1 - dist / 80;
+                    }
+                }
+
+                // 별 크기 (반짝임 + 호버)
+                const baseSize = star.size * 3;
+                const twinkle = animated ? Math.sin(time * 2 + idx * 1.5) * 0.5 + 0.5 : 0.7;
+                const hoverScale = isHovered ? 1 + hoverInfluence * 0.8 : 1;
+                const renderSize = (baseSize + twinkle * 2) * hoverScale;
+
+                // 글로우 효과
+                ctx.save();
+                const glowRadius = renderSize * 4;
+                const glow = ctx.createRadialGradient(sx, sy, 0, sx, sy, glowRadius);
+                const glowAlpha = (0.15 + twinkle * 0.1) * star.brightness;
+                glow.addColorStop(0, `rgba(200, 220, 255, ${glowAlpha})`);
+                glow.addColorStop(0.3, `rgba(150, 180, 255, ${glowAlpha * 0.5})`);
+                glow.addColorStop(1, 'transparent');
+                ctx.fillStyle = glow;
+                ctx.fillRect(sx - glowRadius, sy - glowRadius, glowRadius * 2, glowRadius * 2);
+
+                // 별 본체
+                ctx.globalAlpha = star.brightness;
+                ctx.fillStyle = isHovered ? '#ffffff' : `hsl(220, ${60 + idx * 5}%, ${80 + twinkle * 15}%)`;
+                ctx.shadowColor = 'rgba(200, 220, 255, 0.8)';
+                ctx.shadowBlur = renderSize * 2;
+                ctx.beginPath();
+                ctx.arc(sx, sy, renderSize, 0, Math.PI * 2);
+                ctx.fill();
+
+                // 십자 광선 (큰 별에만)
+                if (star.size > 1.5) {
+                    ctx.globalAlpha = (0.3 + twinkle * 0.2) * star.brightness;
+                    ctx.strokeStyle = 'rgba(200, 220, 255, 0.6)';
+                    ctx.lineWidth = 0.5;
+                    const rayLen = renderSize * 3;
+                    ctx.beginPath();
+                    ctx.moveTo(sx - rayLen, sy);
+                    ctx.lineTo(sx + rayLen, sy);
+                    ctx.moveTo(sx, sy - rayLen);
+                    ctx.lineTo(sx, sy + rayLen);
+                    ctx.stroke();
+                }
+
+                // 키워드 라벨
+                const showLabel = isHovered || !animated;
+                if (showLabel) {
+                    ctx.globalAlpha = isHovered ? 1 : 0.7;
+                    ctx.fillStyle = '#e0e8ff';
+                    ctx.font = `${isHovered ? 14 : 12}px 'Space Grotesk', 'Noto Sans KR', sans-serif`;
+                    ctx.textAlign = 'center';
+                    ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
+                    ctx.shadowBlur = 6;
+                    ctx.fillText(star.keyword, sx, sy - renderSize - 10);
+                }
+
+                ctx.restore();
+            });
+
+            // === 마우스 커서 글로우 ===
+            if (interactive && mouse.active) {
+                ctx.save();
+                const cursorGlow = ctx.createRadialGradient(
+                    mouse.x, mouse.y, 0,
+                    mouse.x, mouse.y, 60
+                );
+                cursorGlow.addColorStop(0, 'rgba(150, 180, 255, 0.06)');
+                cursorGlow.addColorStop(1, 'transparent');
+                ctx.fillStyle = cursorGlow;
+                ctx.fillRect(mouse.x - 60, mouse.y - 60, 120, 120);
+                ctx.restore();
+            }
+
+            // === 비네트 ===
+            const vignette = ctx.createRadialGradient(
+                width / 2, height / 2, Math.min(width, height) * 0.35,
+                width / 2, height / 2, Math.min(width, height) * 0.75
+            );
+            vignette.addColorStop(0, 'transparent');
+            vignette.addColorStop(1, 'rgba(4, 4, 15, 0.5)');
+            ctx.fillStyle = vignette;
+            ctx.fillRect(0, 0, width, height);
+
+            if (animated) {
+                animationRef.current = requestAnimationFrame(animate);
+            }
+        };
+
+        if (animated) {
+            animationRef.current = requestAnimationFrame(animate);
+        } else {
+            animate(performance.now());
+        }
+
+        return () => {
+            if (animationRef.current) cancelAnimationFrame(animationRef.current);
+        };
+    }, [width, height, stars, connections, starMap, backgroundStars, animated, interactive]);
+
+    return (
+        <div
+            ref={containerRef}
+            style={{ width: '100%', maxWidth: '900px', margin: '0 auto' }}
+        >
+            <canvas
+                ref={canvasRef}
+                onMouseMove={interactive ? handleMouseMove : undefined}
+                onMouseLeave={interactive ? handleMouseLeave : undefined}
+                onTouchMove={interactive ? handleTouchMove : undefined}
+                onTouchEnd={interactive ? handleTouchEnd : undefined}
+                onTouchCancel={interactive ? handleTouchEnd : undefined}
+                style={{
+                    width: `${width}px`,
+                    height: `${height}px`,
+                    borderRadius: '16px',
+                    cursor: interactive ? 'crosshair' : 'default',
+                    touchAction: 'none',
+                }}
+            />
+        </div>
+    );
+}
