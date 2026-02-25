@@ -1,6 +1,6 @@
 const bcrypt = require('bcryptjs');
 const { v4: uuidv4 } = require('uuid');
-const { getDb } = require('../../lib/db');
+const { getDb, initDb } = require('../../lib/db');
 const { createToken } = require('../../lib/auth');
 
 module.exports = async function handler(req, res) {
@@ -8,6 +8,7 @@ module.exports = async function handler(req, res) {
     if (req.method !== 'POST') return res.status(405).json({ success: false, error: 'Method not allowed' });
 
     try {
+        await initDb();
         const db = getDb();
         const { name, email, password } = req.body || {};
 
@@ -19,24 +20,18 @@ module.exports = async function handler(req, res) {
             return res.status(400).json({ success: false, error: '비밀번호는 6자 이상이어야 합니다.' });
         }
 
-        const { data: existing } = await db
-            .from('users')
-            .select('id')
-            .eq('email', email)
-            .single();
-
-        if (existing) {
+        const existing = await db.execute({ sql: 'SELECT id FROM users WHERE email = ?', args: [email] });
+        if (existing.rows.length > 0) {
             return res.status(409).json({ success: false, error: '이미 사용 중인 이메일입니다.' });
         }
 
         const id = uuidv4();
-        const passwordHash = await bcrypt.hash(password, 10);
+        const hashedPassword = await bcrypt.hash(password, 10);
 
-        const { error } = await db
-            .from('users')
-            .insert({ id, email, password_hash: passwordHash, name });
-
-        if (error) throw error;
+        await db.execute({
+            sql: 'INSERT INTO users (id, name, email, password) VALUES (?, ?, ?, ?)',
+            args: [id, name, email, hashedPassword]
+        });
 
         const token = createToken({ id, name, email });
 

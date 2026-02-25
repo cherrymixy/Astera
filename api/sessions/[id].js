@@ -1,4 +1,4 @@
-const { getDb } = require('../../lib/db');
+const { getDb, initDb } = require('../../lib/db');
 const { verifyToken, unauthorized } = require('../../lib/auth');
 
 module.exports = async function handler(req, res) {
@@ -7,43 +7,40 @@ module.exports = async function handler(req, res) {
     const decoded = verifyToken(req);
     if (!decoded) return unauthorized(res);
 
-    const db = getDb();
-    const { id } = req.query;
-
     try {
-        if (req.method === 'GET') {
-            const { data, error } = await db
-                .from('sessions')
-                .select('id, title, constellation_json, reasoning_text, transcript_text, created_at')
-                .eq('id', id)
-                .eq('user_id', decoded.id)
-                .single();
+        await initDb();
+        const db = getDb();
+        const { id } = req.query;
 
-            if (error || !data) {
+        if (req.method === 'GET') {
+            const result = await db.execute({
+                sql: 'SELECT id, title, constellation_json, reasoning_text, transcript_text, created_at FROM sessions WHERE id = ? AND user_id = ?',
+                args: [id, decoded.id]
+            });
+
+            if (result.rows.length === 0) {
                 return res.status(404).json({ success: false, error: '별자리를 찾을 수 없습니다.' });
             }
 
+            const s = result.rows[0];
             return res.json({
                 success: true,
                 data: {
-                    id: data.id,
-                    title: data.title,
-                    constellationJson: data.constellation_json,
-                    reasoningText: data.reasoning_text,
-                    transcriptText: data.transcript_text,
-                    createdAt: data.created_at,
+                    id: s.id,
+                    title: s.title,
+                    constellationJson: s.constellation_json,
+                    reasoningText: s.reasoning_text,
+                    transcriptText: s.transcript_text,
+                    createdAt: s.created_at,
                 }
             });
         }
 
         if (req.method === 'DELETE') {
-            const { error } = await db
-                .from('sessions')
-                .delete()
-                .eq('id', id)
-                .eq('user_id', decoded.id);
-
-            if (error) throw error;
+            await db.execute({
+                sql: 'DELETE FROM sessions WHERE id = ? AND user_id = ?',
+                args: [id, decoded.id]
+            });
 
             return res.json({ success: true });
         }

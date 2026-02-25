@@ -1,4 +1,4 @@
-const { getDb } = require('../../lib/db');
+const { getDb, initDb } = require('../../lib/db');
 const { verifyToken, unauthorized } = require('../../lib/auth');
 const { v4: uuidv4 } = require('uuid');
 
@@ -8,20 +8,17 @@ module.exports = async function handler(req, res) {
     const decoded = verifyToken(req);
     if (!decoded) return unauthorized(res);
 
-    const db = getDb();
-
     try {
+        await initDb();
+        const db = getDb();
+
         if (req.method === 'GET') {
-            const { data, error } = await db
-                .from('sessions')
-                .select('id, title, constellation_json, reasoning_text, created_at')
-                .eq('user_id', decoded.id)
-                .order('created_at', { ascending: false })
-                .limit(50);
+            const result = await db.execute({
+                sql: 'SELECT id, title, constellation_json, reasoning_text, created_at FROM sessions WHERE user_id = ? ORDER BY created_at DESC LIMIT 50',
+                args: [decoded.id]
+            });
 
-            if (error) throw error;
-
-            const sessions = (data || []).map(s => ({
+            const sessions = result.rows.map(s => ({
                 id: s.id,
                 title: s.title,
                 constellationJson: s.constellation_json,
@@ -41,18 +38,10 @@ module.exports = async function handler(req, res) {
 
             const id = uuidv4();
 
-            const { error } = await db
-                .from('sessions')
-                .insert({
-                    id,
-                    user_id: decoded.id,
-                    title: title || null,
-                    constellation_json: constellationJson,
-                    reasoning_text: reasoningText || null,
-                    transcript_text: transcriptText || null,
-                });
-
-            if (error) throw error;
+            await db.execute({
+                sql: 'INSERT INTO sessions (id, user_id, title, constellation_json, reasoning_text, transcript_text) VALUES (?, ?, ?, ?, ?, ?)',
+                args: [id, decoded.id, title || null, constellationJson, reasoningText || null, transcriptText || null]
+            });
 
             return res.status(201).json({
                 success: true,

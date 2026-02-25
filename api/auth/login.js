@@ -1,5 +1,5 @@
 const bcrypt = require('bcryptjs');
-const { getDb } = require('../../lib/db');
+const { getDb, initDb } = require('../../lib/db');
 const { createToken } = require('../../lib/auth');
 
 module.exports = async function handler(req, res) {
@@ -7,6 +7,7 @@ module.exports = async function handler(req, res) {
     if (req.method !== 'POST') return res.status(405).json({ success: false, error: 'Method not allowed' });
 
     try {
+        await initDb();
         const db = getDb();
         const { email, password } = req.body || {};
 
@@ -14,17 +15,14 @@ module.exports = async function handler(req, res) {
             return res.status(400).json({ success: false, error: '이메일과 비밀번호를 입력해주세요.' });
         }
 
-        const { data: user, error } = await db
-            .from('users')
-            .select('id, email, name, password_hash')
-            .eq('email', email)
-            .single();
+        const result = await db.execute({ sql: 'SELECT * FROM users WHERE email = ?', args: [email] });
+        const user = result.rows[0];
 
-        if (error || !user) {
+        if (!user) {
             return res.status(401).json({ success: false, error: '이메일 또는 비밀번호가 올바르지 않습니다.' });
         }
 
-        const isMatch = await bcrypt.compare(password, user.password_hash);
+        const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
             return res.status(401).json({ success: false, error: '이메일 또는 비밀번호가 올바르지 않습니다.' });
         }
