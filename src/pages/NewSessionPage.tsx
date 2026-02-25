@@ -1,13 +1,22 @@
 import { useRef, useState, useCallback, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { Star, Connection, ConstellationData } from '../types';
 import { placeStar, autoConnect, extractKeywords, generateTitle } from '../lib/constellationEngine';
 import { fetchAPI } from '../api/client';
 import ConstellationCanvas from '../components/ConstellationCanvas';
 import { SpeechRecognitionService } from '../lib/stt';
 
+interface LocationState {
+    objectName?: string;
+    objectDescription?: string;
+    objectPrompt?: string;
+    objectImage?: string;
+}
+
 export default function NewSessionPage() {
     const navigate = useNavigate();
+    const location = useLocation();
+    const locationState = location.state as LocationState | null;
 
     const [stars, setStars] = useState<Star[]>([]);
     const [connections, setConnections] = useState<Connection[]>([]);
@@ -15,6 +24,7 @@ export default function NewSessionPage() {
     const [keywordInput, setKeywordInput] = useState('');
     const [saving, setSaving] = useState(false);
     const [lastAddedKeyword, setLastAddedKeyword] = useState<string | null>(null);
+    const [objectPrompt, setObjectPrompt] = useState<string | null>(null);
 
     const sttRef = useRef<SpeechRecognitionService | null>(null);
     const processedWordsRef = useRef<Set<string>>(new Set());
@@ -154,6 +164,14 @@ export default function NewSessionPage() {
         return () => { sttRef.current?.stop(); };
     }, []);
 
+    // 카메라에서 인식된 사물이 있으면 첫 번째 별로 추가
+    useEffect(() => {
+        if (locationState?.objectName) {
+            addStar(locationState.objectName);
+            setObjectPrompt(locationState.objectPrompt || null);
+        }
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
     return (
         <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#04040f' }}>
             {/* 헤더 */}
@@ -183,6 +201,26 @@ export default function NewSessionPage() {
 
             {/* 메인 캔버스 영역 */}
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '1.5rem', position: 'relative' }}>
+                {/* 사물 인식 프롬프트 */}
+                {objectPrompt && (
+                    <div style={{
+                        width: '100%', maxWidth: '600px', textAlign: 'center',
+                        marginBottom: '1rem', padding: '1rem 1.5rem',
+                        background: 'rgba(100, 130, 255, 0.06)',
+                        borderRadius: '14px', border: '1px solid rgba(100, 130, 255, 0.12)',
+                    }}>
+                        <div style={{
+                            fontSize: '1rem', fontStyle: 'italic', lineHeight: 1.7,
+                            color: 'rgba(220, 230, 255, 0.85)', fontFamily: "'Noto Serif KR', serif",
+                        }}>
+                            "{objectPrompt}"
+                        </div>
+                        <div style={{ fontSize: '0.8rem', color: 'rgba(200, 210, 255, 0.3)', marginTop: '0.5rem' }}>
+                            마이크로 생각을 말하거나 키워드를 입력해보세요
+                        </div>
+                    </div>
+                )}
+
                 <div style={{ width: '100%', maxWidth: '900px', position: 'relative' }}>
                     <ConstellationCanvas stars={stars} connections={connections} animated={true} interactive={true} />
 

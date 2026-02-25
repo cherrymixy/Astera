@@ -5,6 +5,7 @@ import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import HomePage from './pages/HomePage';
+import CameraCapturePage from './pages/CameraCapturePage';
 import NewSessionPage from './pages/NewSessionPage';
 import SessionDetailPage from './pages/SessionDetailPage';
 
@@ -19,6 +20,9 @@ export default function App() {
                     <Route path="/home" element={
                         <ProtectedRoute><HomePage /></ProtectedRoute>
                     } />
+                    <Route path="/capture" element={
+                        <ProtectedRoute><CameraCapturePage /></ProtectedRoute>
+                    } />
                     <Route path="/session/new" element={
                         <ProtectedRoute><NewSessionPage /></ProtectedRoute>
                     } />
@@ -30,3 +34,4 @@ export default function App() {
         </AuthProvider>
     );
 }
+

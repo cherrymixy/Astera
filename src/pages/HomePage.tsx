@@ -68,7 +68,7 @@ export default function HomePage() {
                     당신의 키워드가 별이 되고, 연결이 별자리가 됩니다
                 </p>
 
-                <Link to="/session/new">
+                <Link to="/capture">
                     <button style={{
                         padding: '1rem 2.5rem', fontSize: '1rem',
                         background: 'linear-gradient(135deg, rgba(100, 130, 255, 0.25) 0%, rgba(150, 100, 255, 0.25) 100%)',
