@@ -69,233 +69,105 @@ export default function SessionDetailPage() {
     };
 
     if (loading) {
-        return (
-            <div style={{
-                minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                background: '#04040f', color: 'rgba(200, 210, 255, 0.4)',
-            }}>
-                별자리를 불러오는 중...
-            </div>
-        );
+        return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)', color: 'var(--text-tertiary)' }}>별자리를 불러오는 중...</div>;
     }
 
     if (!session) return null;
 
     return (
-        <div style={{ minHeight: '100vh', background: '#04040f', color: '#e0e8ff' }}>
-            <div style={{ maxWidth: '900px', margin: '0 auto', padding: '2rem 1.5rem' }}>
-                {/* 헤더 */}
-                <div style={{ marginBottom: '2rem' }}>
-                    <Link to="/home" style={{
-                        color: 'rgba(200, 210, 255, 0.5)', fontSize: '0.9rem',
-                        display: 'flex', alignItems: 'center', gap: '0.5rem',
-                        textDecoration: 'none',
-                    }}>
-                        ← 홈으로
-                    </Link>
+        <div style={{ minHeight: '100vh', background: 'var(--bg)', color: 'var(--text-primary)' }}>
+            <div style={{ maxWidth: '700px', margin: '0 auto', padding: 'clamp(1rem, 5vw, 2rem) clamp(1rem, 5vw, 1.5rem)' }}>
+                {/* Back */}
+                <div style={{ marginBottom: '1.5rem' }}>
+                    <Link to="/home" style={{ color: 'var(--text-tertiary)', fontSize: '0.9rem', textDecoration: 'none' }}>← 홈으로</Link>
                 </div>
 
-                {/* 제목 */}
-                <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-                    <h1 style={{
-                        fontSize: '1.6rem', fontWeight: '600', marginBottom: '0.5rem',
-                        background: 'linear-gradient(135deg, #c0d0ff 0%, #a0b0ff 100%)',
-                        WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-                    }}>
+                {/* Title */}
+                <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+                    <h1 style={{ fontSize: 'clamp(1.3rem, 4vw, 1.5rem)', fontWeight: '700', marginBottom: '0.35rem', letterSpacing: '-0.02em' }}>
                         {session.title || '나의 별자리'}
                     </h1>
-                    <div style={{ fontSize: '0.85rem', color: 'rgba(200, 210, 255, 0.4)' }}>
-                        {new Date(session.createdAt).toLocaleDateString('ko-KR', {
-                            year: 'numeric', month: 'long', day: 'numeric',
-                        })} · ⭐ {stars.length}개의 별
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)' }}>
+                        {new Date(session.createdAt).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' })} · ⭐ {stars.length}개의 별
                     </div>
                 </div>
 
-                {/* 별자리 캔버스 */}
-                <div style={{
-                    marginBottom: '2rem', borderRadius: '20px', overflow: 'hidden',
-                    border: '1px solid rgba(100, 130, 255, 0.1)',
-                    background: 'rgba(10, 10, 30, 0.5)',
-                }}>
+                {/* Canvas */}
+                <div style={{ marginBottom: '1.5rem', borderRadius: 'var(--radius-lg)', overflow: 'hidden', background: 'var(--surface)' }}>
                     <ConstellationCanvas stars={stars} connections={connections} animated={true} interactive={true} />
                 </div>
 
-                {/* 키워드 태그 */}
+                {/* Tags */}
                 {stars.length > 0 && (
-                    <div style={{
-                        display: 'flex', flexWrap: 'wrap', gap: '0.5rem',
-                        justifyContent: 'center', marginBottom: '2rem',
-                    }}>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', justifyContent: 'center', marginBottom: '1.5rem' }}>
                         {stars.map(star => (
-                            <span key={star.id} style={{
-                                padding: '0.4rem 0.9rem',
-                                background: 'rgba(100, 130, 255, 0.1)',
-                                border: '1px solid rgba(100, 130, 255, 0.2)',
-                                borderRadius: '20px', fontSize: '0.85rem',
-                                color: 'rgba(200, 210, 255, 0.8)',
-                            }}>
-                                ⭐ {star.keyword}
+                            <span key={star.id} style={{ padding: '0.35rem 0.75rem', background: 'var(--accent-soft)', borderRadius: '16px', fontSize: '0.8rem', color: 'var(--accent)' }}>
+                                {star.keyword}
                             </span>
                         ))}
                     </div>
                 )}
 
-                {/* 사유 요약 */}
+                {/* Reasoning */}
                 {session.reasoningText && (
-                    <div style={{
-                        marginBottom: '2rem', padding: '2rem',
-                        background: 'rgba(100, 130, 255, 0.05)',
-                        borderRadius: '16px', border: '1px solid rgba(100, 130, 255, 0.1)',
-                    }}>
-                        <div style={{
-                            fontSize: '1.1rem', lineHeight: 1.8, fontStyle: 'italic',
-                            color: 'rgba(220, 230, 255, 0.9)', textAlign: 'center',
-                            fontFamily: "'Noto Serif KR', serif",
-                        }}>
+                    <div style={{ marginBottom: '1.5rem', padding: '1.5rem', background: 'var(--surface)', borderRadius: 'var(--radius-md)' }}>
+                        <div style={{ fontSize: '0.95rem', lineHeight: 1.8, fontStyle: 'italic', color: 'var(--text-secondary)', textAlign: 'center' }}>
                             "{session.reasoningText}"
                         </div>
                     </div>
                 )}
 
-                {/* 철학자 카드 */}
+                {/* Philosophers */}
                 {philosophers.length > 0 && (
-                    <div style={{ marginBottom: '2rem' }}>
-                        <h2 style={{
-                            fontSize: '1.1rem', fontWeight: '600', marginBottom: '1rem',
-                            color: 'rgba(200, 210, 255, 0.7)',
-                        }}>
+                    <div style={{ marginBottom: '1.5rem' }}>
+                        <h2 style={{ fontSize: '1rem', fontWeight: '600', marginBottom: '0.75rem', color: 'var(--text-secondary)' }}>
                             이 별자리와 공명하는 철학자
                         </h2>
-                        <div style={{
-                            display: 'grid',
-                            gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-                            gap: '1rem',
-                        }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: `repeat(auto-fit, minmax(min(220px, 100%), 1fr))`, gap: '0.75rem' }}>
                             {philosophers.map(p => (
-                                <div
-                                    key={p.id}
-                                    onClick={() => setSelectedPhilosopher(p)}
-                                    style={{
-                                        padding: '1.5rem',
-                                        background: 'rgba(100, 130, 255, 0.06)',
-                                        borderRadius: '14px',
-                                        border: '1px solid rgba(100, 130, 255, 0.12)',
-                                        cursor: 'pointer', transition: 'all 0.2s',
-                                    }}
-                                    onMouseEnter={e => {
-                                        e.currentTarget.style.background = 'rgba(100, 130, 255, 0.12)';
-                                        e.currentTarget.style.transform = 'translateY(-2px)';
-                                    }}
-                                    onMouseLeave={e => {
-                                        e.currentTarget.style.background = 'rgba(100, 130, 255, 0.06)';
-                                        e.currentTarget.style.transform = 'translateY(0)';
-                                    }}
-                                >
-                                    <div style={{ fontSize: '1.05rem', fontWeight: '600', marginBottom: '0.3rem' }}>
-                                        {p.name}
-                                    </div>
-                                    <div style={{ fontSize: '0.8rem', color: 'rgba(200, 210, 255, 0.4)', marginBottom: '0.75rem' }}>
-                                        {p.nameEn}
-                                    </div>
-                                    <div style={{
-                                        fontSize: '0.9rem', color: 'rgba(200, 210, 255, 0.7)',
-                                        fontStyle: 'italic', lineHeight: 1.6,
-                                    }}>
-                                        "{p.reasoning}"
-                                    </div>
+                                <div key={p.id} onClick={() => setSelectedPhilosopher(p)}
+                                    style={{ padding: '1.25rem', background: 'var(--surface)', borderRadius: 'var(--radius-md)', cursor: 'pointer', transition: 'background 0.2s' }}
+                                    onMouseEnter={e => { e.currentTarget.style.background = 'var(--surface-hover)'; }}
+                                    onMouseLeave={e => { e.currentTarget.style.background = 'var(--surface)'; }}>
+                                    <div style={{ fontSize: '0.95rem', fontWeight: '600', marginBottom: '0.2rem' }}>{p.name}</div>
+                                    <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', marginBottom: '0.5rem' }}>{p.nameEn}</div>
+                                    <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontStyle: 'italic', lineHeight: 1.6 }}>"{p.reasoning}"</div>
                                 </div>
                             ))}
                         </div>
                     </div>
                 )}
 
-                {/* 철학자 모달 */}
+                {/* Modal */}
                 {selectedPhilosopher && (
-                    <div
-                        style={{
-                            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-                            background: 'rgba(4, 4, 15, 0.85)', backdropFilter: 'blur(8px)',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            zIndex: 1000, padding: '2rem',
-                        }}
-                        onClick={() => setSelectedPhilosopher(null)}
-                    >
-                        <div
-                            style={{
-                                background: 'rgba(15, 15, 40, 0.95)',
-                                borderRadius: '20px', padding: '2.5rem', maxWidth: '550px', width: '100%',
-                                border: '1px solid rgba(100, 130, 255, 0.15)',
-                                boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
-                            }}
-                            onClick={e => e.stopPropagation()}
-                        >
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '1.5rem' }}>
+                    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 'clamp(1rem, 5vw, 2rem)' }}
+                        onClick={() => setSelectedPhilosopher(null)}>
+                        <div style={{ background: '#16161f', borderRadius: 'var(--radius-lg)', padding: 'clamp(1.5rem, 5vw, 2.5rem)', maxWidth: '500px', width: '100%' }}
+                            onClick={e => e.stopPropagation()}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '1.25rem' }}>
                                 <div>
-                                    <h3 style={{ fontSize: '1.4rem', fontWeight: '600', marginBottom: '0.3rem' }}>
-                                        {selectedPhilosopher.name}
-                                    </h3>
-                                    <div style={{ fontSize: '0.85rem', color: 'rgba(200, 210, 255, 0.4)' }}>
-                                        {selectedPhilosopher.nameEn}
-                                    </div>
+                                    <h3 style={{ fontSize: '1.3rem', fontWeight: '700', marginBottom: '0.2rem' }}>{selectedPhilosopher.name}</h3>
+                                    <div style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)' }}>{selectedPhilosopher.nameEn}</div>
                                 </div>
-                                <button
-                                    onClick={() => setSelectedPhilosopher(null)}
-                                    style={{
-                                        background: 'transparent', border: 'none',
-                                        color: 'rgba(200, 210, 255, 0.4)', fontSize: '1.5rem',
-                                        cursor: 'pointer', padding: '0.25rem 0.5rem',
-                                    }}
-                                >×</button>
+                                <button onClick={() => setSelectedPhilosopher(null)} style={{ background: 'none', border: 'none', color: 'var(--text-tertiary)', fontSize: '1.5rem', cursor: 'pointer' }}>×</button>
                             </div>
-                            <div style={{
-                                fontSize: '1.05rem', fontStyle: 'italic',
-                                color: 'rgba(220, 230, 255, 0.9)', lineHeight: 1.7, marginBottom: '1.5rem',
-                            }}>
+                            <div style={{ fontSize: '0.95rem', fontStyle: 'italic', color: 'var(--text-secondary)', lineHeight: 1.7, marginBottom: '1.25rem' }}>
                                 "{selectedPhilosopher.reasoning}"
                             </div>
-                            <div style={{
-                                fontSize: '0.95rem', color: 'rgba(200, 210, 255, 0.7)', lineHeight: 1.8,
-                            }}>
+                            <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: 1.8 }}>
                                 {selectedPhilosopher.explanation}
                             </div>
                         </div>
                     </div>
                 )}
 
-                {/* 버튼 영역 */}
-                <div style={{ textAlign: 'center', marginTop: '2rem', paddingBottom: '3rem', display: 'flex', justifyContent: 'center', gap: '1rem' }}>
-                    <button
-                        onClick={handleExport}
-                        style={{
-                            padding: '0.875rem 2rem',
-                            background: 'rgba(100, 130, 255, 0.12)',
-                            border: '1px solid rgba(100, 130, 255, 0.25)',
-                            borderRadius: '12px', color: '#c0d0ff',
-                            fontSize: '0.95rem', fontWeight: '500',
-                            cursor: 'pointer', transition: 'all 0.2s', fontFamily: 'inherit',
-                        }}
-                        onMouseEnter={e => { e.currentTarget.style.background = 'rgba(100, 130, 255, 0.2)'; }}
-                        onMouseLeave={e => { e.currentTarget.style.background = 'rgba(100, 130, 255, 0.12)'; }}
-                    >
-                        🖼️ PNG 다운로드
-                    </button>
-                    <button
-                        onClick={handleDelete}
-                        style={{
-                            padding: '0.875rem 2rem',
-                            background: 'rgba(255, 80, 80, 0.08)',
-                            border: '1px solid rgba(255, 80, 80, 0.2)',
-                            borderRadius: '12px', color: 'rgba(255, 120, 120, 0.7)',
-                            fontSize: '0.95rem', fontWeight: '500',
-                            cursor: 'pointer', transition: 'all 0.2s', fontFamily: 'inherit',
-                        }}
-                        onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255, 80, 80, 0.15)'; }}
-                        onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255, 80, 80, 0.08)'; }}
-                    >
-                        🗑️ 삭제
-                    </button>
+                {/* Buttons */}
+                <div style={{ textAlign: 'center', marginTop: '1.5rem', paddingBottom: '2rem', display: 'flex', justifyContent: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+                    <button onClick={handleExport} className="btn-secondary" style={{ fontSize: '0.9rem' }}>🖼️ PNG 다운로드</button>
+                    <button onClick={handleDelete} style={{ padding: '0.9rem 1.5rem', background: 'var(--danger)', border: 'none', borderRadius: 'var(--radius-md)', color: 'var(--danger-text)', fontSize: '0.9rem', cursor: 'pointer', fontFamily: 'inherit' }}>🗑️ 삭제</button>
                 </div>
             </div>
         </div>
     );
 }
+

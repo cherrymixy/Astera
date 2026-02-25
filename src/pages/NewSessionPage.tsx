@@ -173,178 +173,61 @@ export default function NewSessionPage() {
     }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
     return (
-        <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#04040f' }}>
+        <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg)' }}>
             {/* 헤더 */}
-            <div style={{
-                padding: '1rem 1.5rem',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                borderBottom: '1px solid rgba(255,255,255,0.06)',
-                background: 'rgba(10, 10, 30, 0.8)',
-                backdropFilter: 'blur(12px)',
-            }}>
-                <Link to="/home" style={{
-                    color: 'rgba(200, 210, 255, 0.6)',
-                    fontSize: '0.9rem',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem',
-                    textDecoration: 'none',
-                }}>
-                    ← 돌아가기
-                </Link>
-                <div style={{ fontSize: '0.9rem', color: 'rgba(200, 210, 255, 0.5)' }}>
-                    ⭐ {stars.length}개의 별
-                </div>
+            <div style={{ padding: '1rem clamp(1rem, 5vw, 1.5rem)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Link to="/home" style={{ color: 'var(--text-tertiary)', fontSize: '0.9rem', textDecoration: 'none' }}>← 돌아가기</Link>
+                <div style={{ fontSize: '0.85rem', color: 'var(--text-tertiary)' }}>⭐ {stars.length}개의 별</div>
             </div>
 
             {/* 메인 캔버스 영역 */}
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '1.5rem', position: 'relative' }}>
-                {/* 사물 인식 프롬프트 */}
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: 'clamp(0.75rem, 3vw, 1.5rem)', position: 'relative' }}>
                 {objectPrompt && (
-                    <div style={{
-                        width: '100%', maxWidth: '600px', textAlign: 'center',
-                        marginBottom: '1rem', padding: '1rem 1.5rem',
-                        background: 'rgba(100, 130, 255, 0.06)',
-                        borderRadius: '14px', border: '1px solid rgba(100, 130, 255, 0.12)',
-                    }}>
-                        <div style={{
-                            fontSize: '1rem', fontStyle: 'italic', lineHeight: 1.7,
-                            color: 'rgba(220, 230, 255, 0.85)', fontFamily: "'Noto Serif KR', serif",
-                        }}>
-                            "{objectPrompt}"
-                        </div>
-                        <div style={{ fontSize: '0.8rem', color: 'rgba(200, 210, 255, 0.3)', marginTop: '0.5rem' }}>
-                            마이크로 생각을 말하거나 키워드를 입력해보세요
-                        </div>
+                    <div style={{ width: '100%', maxWidth: '500px', textAlign: 'center', marginBottom: '1rem', padding: '1rem', background: 'var(--surface)', borderRadius: 'var(--radius-md)' }}>
+                        <div style={{ fontSize: '0.95rem', fontStyle: 'italic', lineHeight: 1.7, color: 'var(--text-secondary)' }}>"{objectPrompt}"</div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', marginTop: '0.4rem' }}>마이크로 말하거나 키워드를 입력해보세요</div>
                     </div>
                 )}
 
                 <div style={{ width: '100%', maxWidth: '900px', position: 'relative' }}>
                     <ConstellationCanvas stars={stars} connections={connections} animated={true} interactive={true} />
-
                     {lastAddedKeyword && (
-                        <div style={{
-                            position: 'absolute', top: '20px', left: '50%', transform: 'translateX(-50%)',
-                            padding: '0.5rem 1.25rem',
-                            background: 'rgba(100, 130, 255, 0.15)',
-                            borderRadius: '20px',
-                            border: '1px solid rgba(100, 130, 255, 0.3)',
-                            color: '#c0d0ff', fontSize: '0.85rem',
-                            animation: 'fadeInUp 0.5s ease',
-                            backdropFilter: 'blur(8px)', pointerEvents: 'none',
-                        }}>
+                        <div style={{ position: 'absolute', top: '16px', left: '50%', transform: 'translateX(-50%)', padding: '0.4rem 1rem', background: 'var(--accent-soft)', borderRadius: '20px', color: 'var(--accent)', fontSize: '0.85rem', animation: 'fadeIn 0.4s ease', pointerEvents: 'none' }}>
                             ✨ {lastAddedKeyword}
                         </div>
                     )}
-
                     {stars.length === 0 && (
-                        <div style={{
-                            position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
-                            textAlign: 'center', color: 'rgba(200, 210, 255, 0.3)', pointerEvents: 'none',
-                        }}>
-                            <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>🌌</div>
-                            <div style={{ fontSize: '1rem', lineHeight: 1.6 }}>
-                                마이크로 생각을 말하거나<br />아래에 키워드를 입력해보세요
-                            </div>
+                        <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center', color: 'var(--text-tertiary)', pointerEvents: 'none' }}>
+                            <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem', opacity: 0.5 }}>🌌</div>
+                            <div style={{ fontSize: '0.9rem', lineHeight: 1.6 }}>마이크로 생각을 말하거나<br />아래에 키워드를 입력해보세요</div>
                         </div>
                     )}
                 </div>
 
-                {/* 하단 컨트롤 */}
-                <div style={{
-                    marginTop: '1.5rem', display: 'flex', flexDirection: 'column', alignItems: 'center',
-                    gap: '1rem', width: '100%', maxWidth: '600px',
-                }}>
+                {/* Controls */}
+                <div style={{ marginTop: '1.25rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.85rem', width: '100%', maxWidth: '500px' }}>
                     <div style={{ display: 'flex', gap: '0.5rem', width: '100%' }}>
-                        <input
-                            type="text"
-                            value={keywordInput}
-                            onChange={e => setKeywordInput(e.target.value)}
-                            onKeyDown={handleKeyDown}
-                            placeholder="키워드를 입력하세요 (쉼표로 구분)"
-                            style={{
-                                flex: 1, padding: '0.875rem 1.25rem',
-                                background: 'rgba(255, 255, 255, 0.05)',
-                                border: '1px solid rgba(255, 255, 255, 0.1)',
-                                borderRadius: '12px', color: '#e0e8ff', fontSize: '0.95rem',
-                                outline: 'none', fontFamily: 'inherit', transition: 'border-color 0.2s',
-                            }}
-                            onFocus={e => { e.currentTarget.style.borderColor = 'rgba(100, 130, 255, 0.4)'; }}
-                            onBlur={e => { e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)'; }}
-                        />
-                        <button
-                            onClick={handleAddKeyword}
-                            style={{
-                                padding: '0.875rem 1.25rem',
-                                background: 'rgba(100, 130, 255, 0.15)',
-                                border: '1px solid rgba(100, 130, 255, 0.3)',
-                                borderRadius: '12px', color: '#c0d0ff', fontSize: '0.95rem',
-                                cursor: 'pointer', transition: 'all 0.2s', whiteSpace: 'nowrap',
-                            }}
-                            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(100, 130, 255, 0.25)'; }}
-                            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(100, 130, 255, 0.15)'; }}
-                        >
-                            추가
-                        </button>
+                        <input type="text" value={keywordInput} onChange={e => setKeywordInput(e.target.value)} onKeyDown={handleKeyDown}
+                            placeholder="키워드를 입력하세요"
+                            style={{ flex: 1, padding: '0.8rem 1rem', background: 'var(--surface)', border: 'none', borderRadius: 'var(--radius-sm)', color: 'var(--text-primary)', fontSize: '0.9rem', outline: 'none', fontFamily: 'inherit' }} />
+                        <button onClick={handleAddKeyword}
+                            style={{ padding: '0.8rem 1rem', background: 'var(--accent-soft)', border: 'none', borderRadius: 'var(--radius-sm)', color: 'var(--accent)', fontSize: '0.9rem', cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'inherit' }}>추가</button>
                     </div>
 
-                    <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                        <button
-                            onClick={handleToggleRecording}
-                            style={{
-                                width: '64px', height: '64px', borderRadius: '50%',
-                                background: isRecording
-                                    ? 'radial-gradient(circle, #ff4444 0%, #cc2222 100%)'
-                                    : 'radial-gradient(circle, rgba(100,130,255,0.3) 0%, rgba(60,80,180,0.2) 100%)',
-                                border: isRecording
-                                    ? '2px solid rgba(255, 100, 100, 0.5)'
-                                    : '2px solid rgba(100, 130, 255, 0.3)',
-                                color: '#fff', fontSize: '1.5rem', cursor: 'pointer', transition: 'all 0.3s',
-                                boxShadow: isRecording
-                                    ? '0 0 20px rgba(255, 50, 50, 0.4)'
-                                    : '0 0 15px rgba(100, 130, 255, 0.15)',
-                            }}
-                        >
+                    <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                        <button onClick={handleToggleRecording}
+                            style={{ width: '56px', height: '56px', borderRadius: '50%', background: isRecording ? '#e03030' : 'var(--accent-soft)', border: 'none', color: isRecording ? 'white' : 'var(--accent)', fontSize: '1.3rem', cursor: 'pointer', transition: 'all 0.2s' }}>
                             {isRecording ? '⏹' : '🎤'}
                         </button>
-
-                        <button
-                            onClick={handleFinish}
-                            disabled={saving || stars.length === 0}
-                            style={{
-                                padding: '0.875rem 2.5rem',
-                                background: stars.length === 0
-                                    ? 'rgba(255, 255, 255, 0.05)'
-                                    : 'linear-gradient(135deg, rgba(100, 130, 255, 0.3) 0%, rgba(150, 100, 255, 0.3) 100%)',
-                                border: '1px solid rgba(150, 170, 255, 0.3)',
-                                borderRadius: '12px',
-                                color: stars.length === 0 ? 'rgba(255,255,255,0.2)' : '#e0e8ff',
-                                fontSize: '1rem', fontWeight: '500',
-                                cursor: stars.length === 0 ? 'not-allowed' : 'pointer',
-                                transition: 'all 0.3s', fontFamily: 'inherit',
-                            }}
-                            onMouseEnter={e => {
-                                if (stars.length > 0) e.currentTarget.style.background = 'linear-gradient(135deg, rgba(100, 130, 255, 0.45) 0%, rgba(150, 100, 255, 0.45) 100%)';
-                            }}
-                            onMouseLeave={e => {
-                                if (stars.length > 0) e.currentTarget.style.background = 'linear-gradient(135deg, rgba(100, 130, 255, 0.3) 0%, rgba(150, 100, 255, 0.3) 100%)';
-                            }}
-                        >
-                            {saving ? '저장 중...' : '별자리 완성 ✨'}
+                        <button onClick={handleFinish} disabled={saving || stars.length === 0}
+                            style={{ padding: '0.8rem 2rem', background: stars.length === 0 ? 'var(--surface)' : 'var(--accent)', border: 'none', borderRadius: 'var(--radius-md)', color: stars.length === 0 ? 'var(--text-tertiary)' : 'white', fontSize: '0.95rem', fontWeight: '600', cursor: stars.length === 0 ? 'not-allowed' : 'pointer', fontFamily: 'inherit', transition: 'opacity 0.2s', opacity: saving ? 0.5 : 1 }}>
+                            {saving ? '저장 중...' : '별자리 완성'}
                         </button>
                     </div>
 
                     {isRecording && (
-                        <div style={{
-                            color: 'rgba(255, 100, 100, 0.8)', fontSize: '0.85rem',
-                            display: 'flex', alignItems: 'center', gap: '0.5rem',
-                        }}>
-                            <span style={{
-                                display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%',
-                                backgroundColor: '#ff4444', animation: 'pulse 1.5s infinite',
-                            }} />
+                        <div style={{ color: '#e03030', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                            <span style={{ display: 'inline-block', width: '7px', height: '7px', borderRadius: '50%', backgroundColor: '#e03030', animation: 'pulse 1.5s infinite' }} />
                             음성 인식 중...
                         </div>
                     )}
@@ -353,3 +236,4 @@ export default function NewSessionPage() {
         </div>
     );
 }
+
