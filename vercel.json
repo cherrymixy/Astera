@@ -1,9 +1,4 @@
 {
-    "version": 2,
-    "framework": null,
-    "installCommand": "cd client && npm install",
-    "buildCommand": "cd client && npm run build",
-    "outputDirectory": "dist",
     "rewrites": [
         {
             "source": "/(.*)",
