@@ -1,0 +1,9 @@
+{
+    "name": "astera",
+    "private": true,
+    "scripts": {
+        "install:client": "cd client && npm install",
+        "build": "cd client && npm run build",
+        "dev": "cd client && npm run dev"
+    }
+}
