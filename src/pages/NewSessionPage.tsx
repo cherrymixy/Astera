@@ -206,33 +206,74 @@ export default function NewSessionPage() {
                 </div>
             </div>
 
-            {/* 하단 컨트롤 — 항상 보임 */}
-            <div style={{ flexShrink: 0, padding: '0.75rem clamp(1rem, 5vw, 1.5rem) 1.5rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.6rem', background: '#050510' }}>
-                <div style={{ display: 'flex', gap: '0.5rem', width: '100%', maxWidth: '500px' }}>
-                    <input type="text" value={keywordInput} onChange={e => setKeywordInput(e.target.value)} onKeyDown={handleKeyDown}
-                        placeholder="키워드를 입력하세요"
-                        style={{ flex: 1, padding: '0.7rem 1rem', background: 'rgba(255,255,255,0.04)', border: 'none', borderRadius: '10px', color: 'rgba(255,255,255,0.9)', fontSize: '0.85rem', outline: 'none', fontFamily: 'inherit' }} />
-                    <button onClick={handleAddKeyword}
-                        style={{ padding: '0.7rem 1rem', background: 'rgba(131,178,224,0.12)', border: 'none', borderRadius: '10px', color: 'var(--accent)', fontSize: '0.85rem', cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'inherit' }}>추가</button>
-                </div>
-
-                <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center' }}>
-                    <button onClick={handleToggleRecording}
-                        style={{ width: '48px', height: '48px', borderRadius: '50%', background: isRecording ? '#e03030' : 'rgba(131,178,224,0.12)', border: 'none', color: isRecording ? 'white' : 'var(--accent)', fontSize: '1.1rem', cursor: 'pointer', transition: 'all 0.2s', flexShrink: 0 }}>
-                        {isRecording ? '⏹' : '🎤'}
-                    </button>
-                    <button onClick={handleFinish} disabled={saving || stars.length === 0}
-                        style={{ padding: '0.7rem 1.8rem', background: stars.length === 0 ? 'rgba(255,255,255,0.04)' : 'var(--accent)', border: 'none', borderRadius: '10px', color: stars.length === 0 ? 'rgba(255,255,255,0.2)' : '#121212', fontSize: '0.85rem', fontWeight: '600', cursor: stars.length === 0 ? 'not-allowed' : 'pointer', fontFamily: 'inherit', transition: 'opacity 0.2s', opacity: saving ? 0.5 : 1 }}>
-                        {saving ? '저장 중...' : '별자리 완성'}
-                    </button>
-                </div>
-
+            {/* 하단 컨트롤 바 */}
+            <div style={{ flexShrink: 0, padding: '0.75rem clamp(0.75rem, 3vw, 1.5rem) 1.25rem', background: '#050510' }}>
+                {/* 녹음 상태 */}
                 {isRecording && (
-                    <div style={{ color: '#e03030', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                        <span style={{ display: 'inline-block', width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#e03030', animation: 'pulse 1.5s infinite' }} />
-                        음성 인식 중...
+                    <div style={{ textAlign: 'center', marginBottom: '0.5rem' }}>
+                        <span style={{ color: '#e03030', fontSize: '0.72rem', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
+                            <span style={{ display: 'inline-block', width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#e03030', animation: 'pulse 1.5s infinite' }} />
+                            음성 인식 중...
+                        </span>
                     </div>
                 )}
+
+                {/* 메인 컨트롤 바 */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', maxWidth: '700px', margin: '0 auto' }}>
+                    {/* 좌: 마이크 + 키보드 토글 */}
+                    <div style={{ display: 'flex', gap: '0.35rem', flexShrink: 0 }}>
+                        <button onClick={handleToggleRecording}
+                            style={{
+                                width: '42px', height: '42px', borderRadius: '50%',
+                                background: isRecording ? '#e03030' : 'rgba(255,255,255,0.06)',
+                                border: '1px solid rgba(255,255,255,0.08)',
+                                color: isRecording ? '#fff' : 'rgba(255,255,255,0.5)',
+                                fontSize: '1rem', cursor: 'pointer', transition: 'all 0.2s',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            }}>
+                            {isRecording ? '⏹' : '🎤'}
+                        </button>
+                    </div>
+
+                    {/* 중: 입력 필드 + 추가 */}
+                    <div style={{ flex: 1, display: 'flex', gap: '0.4rem' }}>
+                        <input type="text" value={keywordInput} onChange={e => setKeywordInput(e.target.value)} onKeyDown={handleKeyDown}
+                            placeholder="키워드를 입력하세요"
+                            style={{
+                                flex: 1, padding: '0.65rem 0.9rem',
+                                background: 'rgba(255,255,255,0.04)',
+                                border: '1px solid rgba(255,255,255,0.06)',
+                                borderRadius: '22px', color: 'rgba(255,255,255,0.85)',
+                                fontSize: '0.82rem', outline: 'none', fontFamily: 'inherit',
+                                minWidth: 0,
+                            }} />
+                        <button onClick={handleAddKeyword}
+                            style={{
+                                padding: '0.65rem 0.85rem',
+                                background: 'rgba(131,178,224,0.1)',
+                                border: '1px solid rgba(131,178,224,0.15)',
+                                borderRadius: '22px', color: 'var(--accent)',
+                                fontSize: '0.78rem', cursor: 'pointer',
+                                whiteSpace: 'nowrap', fontFamily: 'inherit', flexShrink: 0,
+                            }}>추가</button>
+                    </div>
+
+                    {/* 우: 완성 */}
+                    <button onClick={handleFinish} disabled={saving || stars.length === 0}
+                        style={{
+                            padding: '0.65rem 1.2rem', flexShrink: 0,
+                            background: stars.length === 0 ? 'rgba(255,255,255,0.04)' : 'var(--accent)',
+                            border: stars.length === 0 ? '1px solid rgba(255,255,255,0.06)' : 'none',
+                            borderRadius: '22px',
+                            color: stars.length === 0 ? 'rgba(255,255,255,0.2)' : '#121212',
+                            fontSize: '0.82rem', fontWeight: '600',
+                            cursor: stars.length === 0 ? 'not-allowed' : 'pointer',
+                            fontFamily: 'inherit', transition: 'opacity 0.2s',
+                            opacity: saving ? 0.5 : 1,
+                        }}>
+                        {saving ? '저장 중...' : '완성'}
+                    </button>
+                </div>
             </div>
         </div>
     );
