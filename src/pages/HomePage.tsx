@@ -142,13 +142,13 @@ export default function HomePage() {
                 if (!anyVisible) return;
 
                 // Connections
-                ctx.strokeStyle = 'rgba(131, 178, 224, 0.2)';
-                ctx.lineWidth = 1 * z;
+                ctx.strokeStyle = 'rgba(131, 178, 224, 0.6)';
+                ctx.lineWidth = 1.5 * z;
                 connections.forEach(conn => {
                     const from = screenStars.find(s => s.id === conn.from);
                     const to = screenStars.find(s => s.id === conn.to);
                     if (!from || !to) return;
-                    ctx.globalAlpha = 0.3;
+                    ctx.globalAlpha = 0.6;
                     ctx.beginPath();
                     ctx.moveTo(from.sx, from.sy);
                     ctx.lineTo(to.sx, to.sy);
@@ -157,34 +157,41 @@ export default function HomePage() {
 
                 // Stars
                 screenStars.forEach(star => {
-                    const r = (star.size || 3) * z * 0.8;
-                    const twinkle = 0.6 + 0.4 * Math.sin(time * 1.5 + star.brightness * 10);
+                    const r = Math.max(2.5, (star.size || 3) * z * 1.2);
+                    const twinkle = 0.7 + 0.3 * Math.sin(time * 1.5 + star.brightness * 10);
 
                     // Glow
-                    ctx.globalAlpha = 0.15 * twinkle;
-                    const grad = ctx.createRadialGradient(star.sx, star.sy, 0, star.sx, star.sy, r * 5);
-                    grad.addColorStop(0, 'rgba(131, 178, 224, 0.5)');
+                    ctx.globalAlpha = 0.35 * twinkle;
+                    const grad = ctx.createRadialGradient(star.sx, star.sy, 0, star.sx, star.sy, r * 6);
+                    grad.addColorStop(0, 'rgba(131, 178, 224, 0.7)');
                     grad.addColorStop(1, 'rgba(131, 178, 224, 0)');
                     ctx.fillStyle = grad;
                     ctx.beginPath();
-                    ctx.arc(star.sx, star.sy, r * 5, 0, Math.PI * 2);
+                    ctx.arc(star.sx, star.sy, r * 6, 0, Math.PI * 2);
                     ctx.fill();
 
                     // Core
-                    ctx.globalAlpha = (0.7 + 0.3 * star.brightness) * twinkle;
-                    ctx.fillStyle = '#d8e4f5';
+                    ctx.globalAlpha = (0.85 + 0.15 * star.brightness) * twinkle;
+                    ctx.fillStyle = '#e0eaff';
                     ctx.beginPath();
                     ctx.arc(star.sx, star.sy, r, 0, Math.PI * 2);
                     ctx.fill();
+
+                    // Keyword label near star
+                    ctx.globalAlpha = 0.5;
+                    ctx.fillStyle = '#a0b8d8';
+                    ctx.font = `${Math.max(9, 11 * z)}px -apple-system, sans-serif`;
+                    ctx.textAlign = 'center';
+                    ctx.fillText(star.keyword, star.sx, star.sy + r + 14 * z);
                 });
 
                 // Title label
                 const labelX = cx + mapX * z;
-                const labelY = cy + (mapY + 130) * z;
+                const labelY = cy + (mapY - 100) * z;
                 if (labelX > -200 && labelX < w + 200 && labelY > -50 && labelY < h + 50) {
-                    ctx.globalAlpha = 0.45;
-                    ctx.fillStyle = '#a0b0d0';
-                    ctx.font = `${Math.max(11, 13 * z)}px -apple-system, sans-serif`;
+                    ctx.globalAlpha = 0.65;
+                    ctx.fillStyle = '#c0d0e8';
+                    ctx.font = `${Math.max(12, 14 * z)}px -apple-system, sans-serif`;
                     ctx.textAlign = 'center';
                     ctx.fillText(session.title || '무제 별자리', labelX, labelY);
                 }
@@ -380,39 +387,20 @@ export default function HomePage() {
                         ⭐ {selected.stars.length}개 · {new Date(selected.session.createdAt).toLocaleDateString('ko-KR')}
                     </div>
 
-                    {selected.stars.length > 0 && (() => {
-                        const xs = selected.stars.map(s => s.x);
-                        const ys = selected.stars.map(s => s.y);
-                        const minX = Math.min(...xs), maxX = Math.max(...xs);
-                        const minY = Math.min(...ys), maxY = Math.max(...ys);
-                        const rangeX = maxX - minX || 1, rangeY = maxY - minY || 1;
-                        const pad = 24, svgW = 320, svgH = 160;
-                        const scale = Math.min((svgW - pad * 2) / rangeX, (svgH - pad * 2) / rangeY);
-                        const ox = (svgW - rangeX * scale) / 2, oy = (svgH - rangeY * scale) / 2;
-                        const pos = (s: Star) => ({ px: ox + (s.x - minX) * scale, py: oy + (s.y - minY) * scale });
-
-                        return (
-                            <svg width="100%" viewBox={`0 0 ${svgW} ${svgH}`} style={{ marginBottom: '1.25rem', display: 'block' }}>
-                                {selected.connections.map((c, i) => {
-                                    const f = selected.stars.find(s => s.id === c.from);
-                                    const t = selected.stars.find(s => s.id === c.to);
-                                    if (!f || !t) return null;
-                                    const fp = pos(f), tp = pos(t);
-                                    return <line key={i} x1={fp.px} y1={fp.py} x2={tp.px} y2={tp.py} stroke="rgba(131,178,224,0.3)" strokeWidth="1" />;
-                                })}
-                                {selected.stars.map(s => {
-                                    const p = pos(s);
-                                    return (
-                                        <g key={s.id}>
-                                            <circle cx={p.px} cy={p.py} r={Math.max(6, (s.size || 3) * 1.5)} fill="rgba(131,178,224,0.08)" />
-                                            <circle cx={p.px} cy={p.py} r={Math.max(2, (s.size || 3) * 0.6)} fill="#c8d8f0" />
-                                            <text x={p.px} y={p.py + 14} textAnchor="middle" fill="rgba(255,255,255,0.35)" fontSize="8" fontFamily="inherit">{s.keyword}</text>
-                                        </g>
-                                    );
-                                })}
-                            </svg>
-                        );
-                    })()}
+                    {selected.stars.length > 0 && (
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', marginBottom: '1.25rem' }}>
+                            {selected.stars.map(star => (
+                                <span key={star.id} style={{
+                                    padding: '0.3rem 0.7rem', fontSize: '0.75rem',
+                                    background: 'rgba(131, 178, 224, 0.1)',
+                                    border: '1px solid rgba(131, 178, 224, 0.15)',
+                                    borderRadius: '20px', color: 'rgba(255,255,255,0.6)',
+                                }}>
+                                    {star.keyword}
+                                </span>
+                            ))}
+                        </div>
+                    )}
 
                     <button
                         onClick={() => navigate(`/session/${selected.session.id}`)}
