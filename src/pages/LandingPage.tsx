@@ -2,206 +2,156 @@ import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useEffect, useRef } from 'react';
 
-// — Simplex-like noise (2D) —
-function createNoise() {
-    const perm = new Uint8Array(512);
-    const grad = [
-        [1, 1], [-1, 1], [1, -1], [-1, -1],
-        [1, 0], [-1, 0], [0, 1], [0, -1],
-    ];
-    for (let i = 0; i < 256; i++) perm[i] = i;
-    for (let i = 255; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [perm[i], perm[j]] = [perm[j], perm[i]];
-    }
-    for (let i = 0; i < 256; i++) perm[i + 256] = perm[i];
-
-    function dot(gi: number, x: number, y: number) {
-        const g = grad[gi % 8];
-        return g[0] * x + g[1] * y;
-    }
-    function fade(t: number) { return t * t * t * (t * (t * 6 - 15) + 10); }
-    function lerp(a: number, b: number, t: number) { return a + t * (b - a); }
-
-    return function noise2D(x: number, y: number): number {
-        const xi = Math.floor(x) & 255;
-        const yi = Math.floor(y) & 255;
-        const xf = x - Math.floor(x);
-        const yf = y - Math.floor(y);
-        const u = fade(xf);
-        const v = fade(yf);
-
-        const aa = perm[perm[xi] + yi];
-        const ab = perm[perm[xi] + yi + 1];
-        const ba = perm[perm[xi + 1] + yi];
-        const bb = perm[perm[xi + 1] + yi + 1];
-
-        return lerp(
-            lerp(dot(aa, xf, yf), dot(ba, xf - 1, yf), u),
-            lerp(dot(ab, xf, yf - 1), dot(bb, xf - 1, yf - 1), u),
-            v
-        );
-    };
-}
-
-interface Particle {
-    x: number;
-    y: number;
-    vx: number;
-    vy: number;
-    size: number;
-    alpha: number;
-    depth: number; // 0~1, for parallax
-}
-
 export default function LandingPage() {
     const { user, loading } = useAuth();
     const canvasRef = useRef<HTMLCanvasElement>(null);
-    const mouseRef = useRef({ x: -9999, y: -9999 });
     const animRef = useRef<number>(0);
-    const noiseRef = useRef(createNoise());
-    const particlesRef = useRef<Particle[]>([]);
-    const timeRef = useRef(0);
 
     useEffect(() => {
         const canvas = canvasRef.current;
         if (!canvas) return;
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
-        const noise = noiseRef.current;
 
         let w = 0, h = 0;
 
-        const initParticles = () => {
-            const count = Math.min(1800, Math.floor((w * h) / 800));
-            const particles: Particle[] = [];
-            for (let i = 0; i < count; i++) {
-                const depth = Math.random();
-                particles.push({
-                    x: Math.random() * w,
-                    y: Math.random() * h,
-                    vx: 0,
-                    vy: 0,
-                    size: 0.4 + depth * 1.6,
-                    alpha: 0.15 + depth * 0.5,
-                    depth,
-                });
-            }
-            particlesRef.current = particles;
-        };
+        interface Star { x: number; y: number; size: number; brightness: number; speed: number; phase: number; }
+        let stars: Star[] = [];
 
         const resize = () => {
             w = canvas.width = window.innerWidth;
             h = canvas.height = window.innerHeight;
-            initParticles();
+
+            // Sparse, subtle stars
+            const count = Math.floor((w * h) / 12000);
+            stars = [];
+            for (let i = 0; i < count; i++) {
+                stars.push({
+                    x: Math.random() * w,
+                    y: Math.random() * h * 0.75, // mostly upper area
+                    size: Math.random() * 1.2 + 0.2,
+                    brightness: 0.2 + Math.random() * 0.5,
+                    speed: 0.3 + Math.random() * 1.5,
+                    phase: Math.random() * Math.PI * 2,
+                });
+            }
         };
         resize();
         window.addEventListener('resize', resize);
 
-        const handleMouseMove = (e: MouseEvent) => {
-            mouseRef.current = { x: e.clientX, y: e.clientY };
-        };
-        const handleMouseLeave = () => {
-            mouseRef.current = { x: -9999, y: -9999 };
-        };
-        window.addEventListener('mousemove', handleMouseMove);
-        window.addEventListener('mouseleave', handleMouseLeave);
-
         const animate = () => {
-            timeRef.current += 0.003;
-            const t = timeRef.current;
-            const mouse = mouseRef.current;
+            const time = Date.now() * 0.001;
 
-            // Semi-transparent clear for subtle trails
-            ctx.fillStyle = 'rgba(6, 6, 12, 0.15)';
+            // Deep space background
+            ctx.fillStyle = '#050510';
             ctx.fillRect(0, 0, w, h);
 
-            const noiseScale = 0.0015;
-            const mouseRadius = 300;
-
-            particlesRef.current.forEach(p => {
-                // Flow field from noise
-                const nx = p.x * noiseScale;
-                const ny = p.y * noiseScale;
-                const n = noise(nx + t * 0.5, ny + t * 0.3);
-                const angle = n * Math.PI * 4;
-
-                // Base flow velocity (depth affects speed — parallax)
-                const speed = 0.3 + p.depth * 0.7;
-                let fx = Math.cos(angle) * speed;
-                let fy = Math.sin(angle) * speed;
-
-                // Mouse influence — broad, smooth distortion
-                const dx = p.x - mouse.x;
-                const dy = p.y - mouse.y;
-                const dist = Math.sqrt(dx * dx + dy * dy);
-
-                if (dist < mouseRadius) {
-                    const force = ((mouseRadius - dist) / mouseRadius) ** 2;
-                    const mAngle = Math.atan2(dy, dx);
-                    // Swirl + push
-                    fx += Math.cos(mAngle + Math.PI * 0.5) * force * 2.5;
-                    fy += Math.sin(mAngle + Math.PI * 0.5) * force * 2.5;
-                    fx += Math.cos(mAngle) * force * 1.2;
-                    fy += Math.sin(mAngle) * force * 1.2;
-                }
-
-                p.vx += (fx - p.vx) * 0.08;
-                p.vy += (fy - p.vy) * 0.08;
-                p.x += p.vx;
-                p.y += p.vy;
-
-                // Wrap around edges
-                if (p.x < -10) p.x = w + 10;
-                if (p.x > w + 10) p.x = -10;
-                if (p.y < -10) p.y = h + 10;
-                if (p.y > h + 10) p.y = -10;
-
-                // Draw
-                ctx.globalAlpha = p.alpha;
-                ctx.fillStyle = `rgba(200, 210, 240, ${p.alpha})`;
+            // Stars — gentle twinkle, no interaction
+            stars.forEach(s => {
+                const twinkle = 0.5 + 0.5 * Math.sin(time * s.speed + s.phase);
+                ctx.globalAlpha = s.brightness * twinkle;
+                ctx.fillStyle = '#c0c8e0';
                 ctx.beginPath();
-                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
                 ctx.fill();
             });
-
             ctx.globalAlpha = 1;
+
+            // Planet horizon glow at bottom
+            const horizonY = h * 0.92;
+
+            // Outer atmospheric glow (wide, soft blue)
+            const atmosGlow = ctx.createRadialGradient(
+                w * 0.5, h * 1.35, 0,
+                w * 0.5, h * 1.35, h * 0.7
+            );
+            atmosGlow.addColorStop(0, 'rgba(60, 120, 200, 0.12)');
+            atmosGlow.addColorStop(0.3, 'rgba(40, 90, 170, 0.06)');
+            atmosGlow.addColorStop(0.6, 'rgba(20, 50, 120, 0.02)');
+            atmosGlow.addColorStop(1, 'rgba(5, 5, 16, 0)');
+            ctx.fillStyle = atmosGlow;
+            ctx.fillRect(0, 0, w, h);
+
+            // Horizon light line
+            const lineGrad = ctx.createLinearGradient(0, horizonY - 2, 0, horizonY + 30);
+            lineGrad.addColorStop(0, 'rgba(120, 170, 255, 0.25)');
+            lineGrad.addColorStop(0.15, 'rgba(80, 140, 230, 0.08)');
+            lineGrad.addColorStop(1, 'rgba(5, 5, 16, 0)');
+
+            // Curved horizon
+            ctx.save();
+            ctx.beginPath();
+            ctx.ellipse(w * 0.5, h * 1.35, w * 0.85, h * 0.5, 0, Math.PI * 1.15, Math.PI * 1.85);
+            ctx.closePath();
+            ctx.clip();
+
+            ctx.fillStyle = lineGrad;
+            ctx.fillRect(0, horizonY - 40, w, 100);
+
+            // Planet surface subtle glow
+            const surfaceGrad = ctx.createRadialGradient(
+                w * 0.5, h * 1.35, h * 0.35,
+                w * 0.5, h * 1.35, h * 0.52
+            );
+            surfaceGrad.addColorStop(0, 'rgba(10, 15, 30, 0.9)');
+            surfaceGrad.addColorStop(0.5, 'rgba(15, 25, 50, 0.4)');
+            surfaceGrad.addColorStop(1, 'rgba(5, 5, 16, 0)');
+            ctx.fillStyle = surfaceGrad;
+            ctx.fillRect(0, 0, w, h);
+
+            // Rim light on the horizon edge
+            const rimGlow = ctx.createRadialGradient(
+                w * 0.5, h * 1.35, h * 0.42,
+                w * 0.5, h * 1.35, h * 0.46
+            );
+            rimGlow.addColorStop(0, 'rgba(100, 160, 255, 0)');
+            rimGlow.addColorStop(0.7, 'rgba(100, 160, 255, 0.15)');
+            rimGlow.addColorStop(1, 'rgba(100, 160, 255, 0)');
+            ctx.fillStyle = rimGlow;
+            ctx.fillRect(0, 0, w, h);
+
+            ctx.restore();
+
+            // Center light bloom above horizon
+            const bloom = ctx.createRadialGradient(
+                w * 0.5, horizonY, 0,
+                w * 0.5, horizonY, w * 0.35
+            );
+            bloom.addColorStop(0, 'rgba(100, 160, 255, 0.08)');
+            bloom.addColorStop(0.3, 'rgba(60, 110, 200, 0.03)');
+            bloom.addColorStop(1, 'rgba(5, 5, 16, 0)');
+            ctx.fillStyle = bloom;
+            ctx.fillRect(0, 0, w, h);
+
             animRef.current = requestAnimationFrame(animate);
         };
-
-        // Initial fill to prevent flash
-        ctx.fillStyle = '#06060c';
-        ctx.fillRect(0, 0, w, h);
 
         animRef.current = requestAnimationFrame(animate);
 
         return () => {
             cancelAnimationFrame(animRef.current);
             window.removeEventListener('resize', resize);
-            window.removeEventListener('mousemove', handleMouseMove);
-            window.removeEventListener('mouseleave', handleMouseLeave);
         };
     }, []);
 
     if (!loading && user) return <Navigate to="/home" replace />;
 
     return (
-        <div style={{ position: 'relative', minHeight: '100vh', overflow: 'hidden', background: '#06060c' }}>
+        <div style={{ position: 'relative', minHeight: '100vh', overflow: 'hidden', background: '#050510' }}>
             <canvas
                 ref={canvasRef}
                 style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: 0 }}
             />
 
-            <div style={{ position: 'relative', zIndex: 1, pointerEvents: 'none' }}>
+            <div style={{ position: 'relative', zIndex: 1 }}>
                 {/* Nav */}
                 <nav style={{
                     display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                     padding: '1.25rem clamp(1.5rem, 5vw, 3rem)',
-                    pointerEvents: 'auto',
                 }}>
                     <div style={{
                         display: 'flex', alignItems: 'center', gap: '0.6rem',
-                        fontSize: '1rem', fontWeight: '500', color: 'var(--text-primary)',
+                        fontSize: '1rem', fontWeight: '500', color: 'rgba(255,255,255,0.9)',
                         letterSpacing: '-0.01em',
                     }}>
                         <img src="/logo.svg" alt="Astera" style={{ width: '18px', height: '18px' }} />
@@ -212,7 +162,7 @@ export default function LandingPage() {
                             <button style={{
                                 padding: '0.5rem 1.1rem', fontSize: '0.85rem',
                                 background: 'none', border: 'none',
-                                color: 'var(--text-secondary)', cursor: 'pointer', fontFamily: 'inherit',
+                                color: 'rgba(255,255,255,0.5)', cursor: 'pointer', fontFamily: 'inherit',
                             }}>
                                 로그인
                             </button>
@@ -220,10 +170,9 @@ export default function LandingPage() {
                         <Link to="/register">
                             <button style={{
                                 padding: '0.5rem 1.2rem', fontSize: '0.85rem',
-                                background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.1)',
-                                borderRadius: '8px', color: 'var(--text-primary)',
+                                background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)',
+                                borderRadius: '8px', color: 'rgba(255,255,255,0.85)',
                                 cursor: 'pointer', fontFamily: 'inherit', fontWeight: '500',
-                                transition: 'background 0.2s',
                             }}>
                                 시작하기
                             </button>
@@ -231,78 +180,89 @@ export default function LandingPage() {
                     </div>
                 </nav>
 
-                {/* Hero */}
+                {/* Hero — centered above horizon */}
                 <section style={{
                     display: 'flex', flexDirection: 'column', alignItems: 'center',
                     justifyContent: 'center', textAlign: 'center',
-                    minHeight: 'calc(100vh - 80px)',
+                    minHeight: 'calc(100vh - 200px)',
                     padding: '0 clamp(1.5rem, 5vw, 2rem)',
+                    paddingBottom: '15vh',
                 }}>
-                    <div style={{ marginBottom: '2rem', animation: 'fadeIn 1s ease' }}>
-                        <img src="/logo.svg" alt="Astera" style={{ width: '48px', height: '48px', opacity: 0.9 }} />
-                    </div>
-
                     <h1 style={{
-                        fontSize: 'clamp(1.6rem, 4vw, 2rem)', fontWeight: '500',
-                        marginBottom: '1rem', lineHeight: 1.35,
-                        color: 'var(--text-primary)', letterSpacing: '-0.02em',
-                        animation: 'fadeIn 1s ease 0.15s both',
+                        fontSize: 'clamp(1.5rem, 3.5vw, 2.2rem)', fontWeight: '300',
+                        marginBottom: '0.6rem', lineHeight: 1.4,
+                        color: 'rgba(255,255,255,0.92)',
+                        letterSpacing: '0.08em',
+                        animation: 'fadeIn 1.5s ease both',
                     }}>
-                        당신의 생각이<br />별자리가 되는 곳
+                        당신의 생각이
+                    </h1>
+                    <h1 style={{
+                        fontSize: 'clamp(1.5rem, 3.5vw, 2.2rem)', fontWeight: '300',
+                        marginBottom: '2rem', lineHeight: 1.4,
+                        color: 'rgba(255,255,255,0.92)',
+                        letterSpacing: '0.08em',
+                        animation: 'fadeIn 1.5s ease 0.2s both',
+                    }}>
+                        별자리가 되는 곳
                     </h1>
 
                     <p style={{
-                        fontSize: 'clamp(0.85rem, 1.8vw, 1rem)',
-                        color: 'var(--text-secondary)', maxWidth: '380px',
-                        lineHeight: 1.7, marginBottom: '2.5rem',
-                        animation: 'fadeIn 1s ease 0.3s both',
+                        fontSize: 'clamp(0.75rem, 1.5vw, 0.85rem)',
+                        color: 'rgba(255,255,255,0.35)', maxWidth: '400px',
+                        lineHeight: 1.8, marginBottom: '2.5rem',
+                        letterSpacing: '0.02em',
+                        animation: 'fadeIn 1.5s ease 0.5s both',
                     }}>
                         키워드를 말하면 별이 태어나고,<br />
                         생각의 연결이 당신만의 별자리를 그립니다.
                     </p>
 
-                    <div style={{ animation: 'fadeIn 1s ease 0.45s both', pointerEvents: 'auto' }}>
+                    <div style={{ animation: 'fadeIn 1.5s ease 0.8s both' }}>
                         <Link to="/register">
                             <button style={{
-                                padding: '0.8rem 2rem', fontSize: '0.9rem',
-                                background: 'rgba(255,255,255,0.06)',
-                                border: '1px solid rgba(255,255,255,0.12)',
-                                borderRadius: '10px', color: 'var(--text-primary)',
-                                fontWeight: '500', cursor: 'pointer', fontFamily: 'inherit',
-                                transition: 'all 0.25s',
-                                backdropFilter: 'blur(8px)',
+                                padding: '0.7rem 2.2rem', fontSize: '0.8rem',
+                                background: 'transparent',
+                                border: '1px solid rgba(255,255,255,0.15)',
+                                borderRadius: '6px', color: 'rgba(255,255,255,0.7)',
+                                fontWeight: '400', cursor: 'pointer', fontFamily: 'inherit',
+                                letterSpacing: '0.1em',
+                                transition: 'all 0.3s',
                             }}>
                                 별자리 만들기
                             </button>
                         </Link>
                     </div>
-
-                    <div style={{
-                        display: 'flex', gap: '1.5rem', marginTop: '3rem',
-                        animation: 'fadeIn 1s ease 0.6s both',
-                    }}>
-                        {[
-                            { icon: '🎤', label: '음성으로 별 만들기' },
-                            { icon: '✨', label: '별자리 연결' },
-                            { icon: '📜', label: '철학자 공명' },
-                        ].map((item, i) => (
-                            <div key={i} style={{
-                                display: 'flex', alignItems: 'center', gap: '0.4rem',
-                                fontSize: '0.8rem', color: 'var(--text-tertiary)',
-                            }}>
-                                <span style={{ fontSize: '0.9rem' }}>{item.icon}</span>
-                                {item.label}
-                            </div>
-                        ))}
-                    </div>
                 </section>
 
-                <footer style={{
-                    textAlign: 'center', padding: '1.5rem',
-                    color: 'var(--text-tertiary)', fontSize: '0.7rem',
+                {/* Bottom labels */}
+                <div style={{
+                    position: 'absolute', bottom: '2.5rem', left: 0, right: 0,
+                    display: 'flex', justifyContent: 'center', gap: 'clamp(2rem, 6vw, 5rem)',
+                    animation: 'fadeIn 2s ease 1.2s both',
                 }}>
-                    © 2026 Astera
-                </footer>
+                    {[
+                        { ko: '음성 인식', en: 'Voice Input' },
+                        { ko: '별자리 연결', en: 'Constellation' },
+                        { ko: '철학적 공명', en: 'Resonance' },
+                        { ko: '사유의 지도', en: 'Thought Map' },
+                    ].map((item, i) => (
+                        <div key={i} style={{ textAlign: 'center' }}>
+                            <div style={{
+                                fontSize: '0.75rem', color: 'rgba(255,255,255,0.45)',
+                                fontWeight: '400', letterSpacing: '0.05em', marginBottom: '0.2rem',
+                            }}>
+                                {item.ko}
+                            </div>
+                            <div style={{
+                                fontSize: '0.65rem', color: 'rgba(255,255,255,0.2)',
+                                fontWeight: '300', letterSpacing: '0.08em',
+                            }}>
+                                {item.en}
+                            </div>
+                        </div>
+                    ))}
+                </div>
             </div>
         </div>
     );
