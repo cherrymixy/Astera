@@ -71,11 +71,11 @@ export default function LandingPage() {
                     padding: '1.25rem clamp(1.5rem, 5vw, 3rem)',
                 }}>
                     <div style={{
-                        display: 'flex', alignItems: 'center', gap: '0.6rem',
-                        fontSize: '1rem', fontWeight: '500', color: 'rgba(255,255,255,0.9)',
+                        display: 'flex', alignItems: 'center', gap: '0.7rem',
+                        fontSize: '1.15rem', fontWeight: '600', color: 'rgba(255,255,255,0.95)',
                         letterSpacing: '-0.01em',
                     }}>
-                        <img src="/logo.svg" alt="Astera" style={{ width: '18px', height: '18px' }} />
+                        <img src="/logo.svg" alt="Astera" style={{ width: '24px', height: '24px' }} />
                         Astera
                     </div>
                     <Link to="/login">
@@ -117,6 +117,22 @@ export default function LandingPage() {
                         내 생각이 곧 철학이 되고, 내 철학이 하나의 별자리가 됩니다.
                     </p>
                 </section>
+
+                {/* Bottom labels */}
+                <div style={{
+                    position: 'absolute', bottom: '2.5rem', left: 0, right: 0,
+                    display: 'flex', justifyContent: 'center', gap: 'clamp(2rem, 6vw, 5rem)',
+                    animation: 'fadeIn 2s ease 1s both',
+                }}>
+                    {['사물 인식', '음성 분석', '철학 시각화', '철학자 연결'].map((label, i) => (
+                        <div key={i} style={{
+                            fontSize: '0.75rem', color: 'rgba(255,255,255,0.35)',
+                            fontWeight: '400', letterSpacing: '0.05em',
+                        }}>
+                            {label}
+                        </div>
+                    ))}
+                </div>
             </div>
         </div>
     );

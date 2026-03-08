@@ -32,7 +32,7 @@ export default function LoginPage() {
                         <img src="/logo.svg" alt="Astera" style={{ width: '40px', height: '40px' }} />
                     </div>
                     <h1 style={{ fontSize: '1.5rem', fontWeight: '700', marginBottom: '0.5rem', color: 'var(--text-primary)' }}>
-                        나의 철학 별자리
+                        Astera
                     </h1>
                     <p style={{ fontSize: '0.9rem', color: 'var(--text-tertiary)' }}>로그인하고 별자리를 이어가세요</p>
                 </div>
