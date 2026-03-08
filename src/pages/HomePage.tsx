@@ -357,7 +357,7 @@ export default function HomePage() {
                 >
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
                         <h2 style={{ fontSize: '1.15rem', fontWeight: '600', color: 'var(--text-primary)' }}>
-                            {selected.session.title || '무제 별자리'}
+                            {selected.stars[0]?.keyword || selected.session.title || '무제 별자리'}
                         </h2>
                         <button onClick={() => setSelected(null)} style={{
                             background: 'none', border: 'none', color: 'rgba(255,255,255,0.3)',
@@ -365,24 +365,9 @@ export default function HomePage() {
                         }}>✕</button>
                     </div>
 
-                    <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.3)', marginBottom: '1rem' }}>
+                    <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.3)', marginBottom: '1.25rem' }}>
                         {selected.stars.length}개 · {new Date(selected.session.createdAt).toLocaleDateString('ko-KR')}
                     </div>
-
-                    {selected.stars.length > 0 && (
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', marginBottom: '1.25rem' }}>
-                            {selected.stars.map(star => (
-                                <span key={star.id} style={{
-                                    padding: '0.3rem 0.7rem', fontSize: '0.75rem',
-                                    background: 'rgba(131, 178, 224, 0.1)',
-                                    border: '1px solid rgba(131, 178, 224, 0.15)',
-                                    borderRadius: '20px', color: 'rgba(255,255,255,0.6)',
-                                }}>
-                                    {star.keyword}
-                                </span>
-                            ))}
-                        </div>
-                    )}
 
                     <button
                         onClick={() => navigate(`/session/${selected.session.id}`)}
