@@ -177,17 +177,6 @@ export default function HomePage() {
                     ctx.arc(star.sx, star.sy, r, 0, Math.PI * 2);
                     ctx.fill();
                 });
-
-                // Title label
-                const labelX = cx + mapX * z;
-                const labelY = cy + (mapY - 100) * z;
-                if (labelX > -200 && labelX < w + 200 && labelY > -50 && labelY < h + 50) {
-                    ctx.globalAlpha = 0.65;
-                    ctx.fillStyle = '#c0d0e8';
-                    ctx.font = `${Math.max(12, 14 * z)}px -apple-system, sans-serif`;
-                    ctx.textAlign = 'center';
-                    ctx.fillText(session.title || '무제 별자리', labelX, labelY);
-                }
             });
 
             ctx.globalAlpha = 1;
