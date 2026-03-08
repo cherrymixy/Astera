@@ -142,13 +142,13 @@ export default function HomePage() {
                 if (!anyVisible) return;
 
                 // Connections
-                ctx.strokeStyle = 'rgba(131, 178, 224, 0.6)';
-                ctx.lineWidth = 1.5 * z;
+                ctx.strokeStyle = 'rgba(131, 178, 224, 0.7)';
+                ctx.lineWidth = 2.5 * z;
                 connections.forEach(conn => {
                     const from = screenStars.find(s => s.id === conn.from);
                     const to = screenStars.find(s => s.id === conn.to);
                     if (!from || !to) return;
-                    ctx.globalAlpha = 0.6;
+                    ctx.globalAlpha = 0.8;
                     ctx.beginPath();
                     ctx.moveTo(from.sx, from.sy);
                     ctx.lineTo(to.sx, to.sy);
@@ -157,32 +157,25 @@ export default function HomePage() {
 
                 // Stars
                 screenStars.forEach(star => {
-                    const r = Math.max(2.5, (star.size || 3) * z * 1.2);
-                    const twinkle = 0.7 + 0.3 * Math.sin(time * 1.5 + star.brightness * 10);
+                    const r = Math.max(4, (star.size || 3) * z * 2);
+                    const twinkle = 0.8 + 0.2 * Math.sin(time * 1.5 + star.brightness * 10);
 
                     // Glow
-                    ctx.globalAlpha = 0.35 * twinkle;
-                    const grad = ctx.createRadialGradient(star.sx, star.sy, 0, star.sx, star.sy, r * 6);
-                    grad.addColorStop(0, 'rgba(131, 178, 224, 0.7)');
+                    ctx.globalAlpha = 0.5 * twinkle;
+                    const grad = ctx.createRadialGradient(star.sx, star.sy, 0, star.sx, star.sy, r * 5);
+                    grad.addColorStop(0, 'rgba(131, 178, 224, 0.8)');
                     grad.addColorStop(1, 'rgba(131, 178, 224, 0)');
                     ctx.fillStyle = grad;
                     ctx.beginPath();
-                    ctx.arc(star.sx, star.sy, r * 6, 0, Math.PI * 2);
+                    ctx.arc(star.sx, star.sy, r * 5, 0, Math.PI * 2);
                     ctx.fill();
 
                     // Core
-                    ctx.globalAlpha = (0.85 + 0.15 * star.brightness) * twinkle;
-                    ctx.fillStyle = '#e0eaff';
+                    ctx.globalAlpha = 0.95 * twinkle;
+                    ctx.fillStyle = '#e8f0ff';
                     ctx.beginPath();
                     ctx.arc(star.sx, star.sy, r, 0, Math.PI * 2);
                     ctx.fill();
-
-                    // Keyword label near star
-                    ctx.globalAlpha = 0.5;
-                    ctx.fillStyle = '#a0b8d8';
-                    ctx.font = `${Math.max(9, 11 * z)}px -apple-system, sans-serif`;
-                    ctx.textAlign = 'center';
-                    ctx.fillText(star.keyword, star.sx, star.sy + r + 14 * z);
                 });
 
                 // Title label
