@@ -2,135 +2,176 @@ import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useEffect, useRef } from 'react';
 
+// — Simplex-like noise (2D) —
+function createNoise() {
+    const perm = new Uint8Array(512);
+    const grad = [
+        [1, 1], [-1, 1], [1, -1], [-1, -1],
+        [1, 0], [-1, 0], [0, 1], [0, -1],
+    ];
+    for (let i = 0; i < 256; i++) perm[i] = i;
+    for (let i = 255; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [perm[i], perm[j]] = [perm[j], perm[i]];
+    }
+    for (let i = 0; i < 256; i++) perm[i + 256] = perm[i];
+
+    function dot(gi: number, x: number, y: number) {
+        const g = grad[gi % 8];
+        return g[0] * x + g[1] * y;
+    }
+    function fade(t: number) { return t * t * t * (t * (t * 6 - 15) + 10); }
+    function lerp(a: number, b: number, t: number) { return a + t * (b - a); }
+
+    return function noise2D(x: number, y: number): number {
+        const xi = Math.floor(x) & 255;
+        const yi = Math.floor(y) & 255;
+        const xf = x - Math.floor(x);
+        const yf = y - Math.floor(y);
+        const u = fade(xf);
+        const v = fade(yf);
+
+        const aa = perm[perm[xi] + yi];
+        const ab = perm[perm[xi] + yi + 1];
+        const ba = perm[perm[xi + 1] + yi];
+        const bb = perm[perm[xi + 1] + yi + 1];
+
+        return lerp(
+            lerp(dot(aa, xf, yf), dot(ba, xf - 1, yf), u),
+            lerp(dot(ab, xf, yf - 1), dot(bb, xf - 1, yf - 1), u),
+            v
+        );
+    };
+}
+
 interface Particle {
     x: number;
     y: number;
     vx: number;
     vy: number;
     size: number;
-    opacity: number;
-    life: number;
-    maxLife: number;
-    angle: number;
-    orbitRadius: number;
-    orbitSpeed: number;
+    alpha: number;
+    depth: number; // 0~1, for parallax
 }
 
 export default function LandingPage() {
     const { user, loading } = useAuth();
     const canvasRef = useRef<HTMLCanvasElement>(null);
-    const mouseRef = useRef({ x: -9999, y: -9999, active: false });
-    const particlesRef = useRef<Particle[]>([]);
+    const mouseRef = useRef({ x: -9999, y: -9999 });
     const animRef = useRef<number>(0);
+    const noiseRef = useRef(createNoise());
+    const particlesRef = useRef<Particle[]>([]);
+    const timeRef = useRef(0);
 
     useEffect(() => {
         const canvas = canvasRef.current;
         if (!canvas) return;
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
+        const noise = noiseRef.current;
+
+        let w = 0, h = 0;
+
+        const initParticles = () => {
+            const count = Math.min(1800, Math.floor((w * h) / 800));
+            const particles: Particle[] = [];
+            for (let i = 0; i < count; i++) {
+                const depth = Math.random();
+                particles.push({
+                    x: Math.random() * w,
+                    y: Math.random() * h,
+                    vx: 0,
+                    vy: 0,
+                    size: 0.4 + depth * 1.6,
+                    alpha: 0.15 + depth * 0.5,
+                    depth,
+                });
+            }
+            particlesRef.current = particles;
+        };
 
         const resize = () => {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
+            w = canvas.width = window.innerWidth;
+            h = canvas.height = window.innerHeight;
+            initParticles();
         };
         resize();
         window.addEventListener('resize', resize);
 
         const handleMouseMove = (e: MouseEvent) => {
-            mouseRef.current = { x: e.clientX, y: e.clientY, active: true };
+            mouseRef.current = { x: e.clientX, y: e.clientY };
         };
         const handleMouseLeave = () => {
-            mouseRef.current = { ...mouseRef.current, active: false };
+            mouseRef.current = { x: -9999, y: -9999 };
         };
         window.addEventListener('mousemove', handleMouseMove);
         window.addEventListener('mouseleave', handleMouseLeave);
 
-        const spawnParticle = (mx: number, my: number) => {
-            const angle = Math.random() * Math.PI * 2;
-            const orbitRadius = 15 + Math.random() * 100;
-            const maxLife = 120 + Math.random() * 180;
-
-            particlesRef.current.push({
-                x: mx + Math.cos(angle) * orbitRadius * 0.3,
-                y: my + Math.sin(angle) * orbitRadius * 0.3,
-                vx: (Math.random() - 0.5) * 0.5,
-                vy: (Math.random() - 0.5) * 0.5,
-                size: 0.8 + Math.random() * 1.8,
-                opacity: 0.3 + Math.random() * 0.7,
-                life: 0,
-                maxLife,
-                angle,
-                orbitRadius,
-                orbitSpeed: (0.008 + Math.random() * 0.025) * (Math.random() > 0.5 ? 1 : -1),
-            });
-        };
-
         const animate = () => {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
+            timeRef.current += 0.003;
+            const t = timeRef.current;
             const mouse = mouseRef.current;
 
-            // Spawn particles near mouse
-            if (mouse.active && particlesRef.current.length < 120) {
-                for (let i = 0; i < 2; i++) {
-                    spawnParticle(mouse.x, mouse.y);
+            // Semi-transparent clear for subtle trails
+            ctx.fillStyle = 'rgba(6, 6, 12, 0.15)';
+            ctx.fillRect(0, 0, w, h);
+
+            const noiseScale = 0.0015;
+            const mouseRadius = 300;
+
+            particlesRef.current.forEach(p => {
+                // Flow field from noise
+                const nx = p.x * noiseScale;
+                const ny = p.y * noiseScale;
+                const n = noise(nx + t * 0.5, ny + t * 0.3);
+                const angle = n * Math.PI * 4;
+
+                // Base flow velocity (depth affects speed — parallax)
+                const speed = 0.3 + p.depth * 0.7;
+                let fx = Math.cos(angle) * speed;
+                let fy = Math.sin(angle) * speed;
+
+                // Mouse influence — broad, smooth distortion
+                const dx = p.x - mouse.x;
+                const dy = p.y - mouse.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+
+                if (dist < mouseRadius) {
+                    const force = ((mouseRadius - dist) / mouseRadius) ** 2;
+                    const mAngle = Math.atan2(dy, dx);
+                    // Swirl + push
+                    fx += Math.cos(mAngle + Math.PI * 0.5) * force * 2.5;
+                    fy += Math.sin(mAngle + Math.PI * 0.5) * force * 2.5;
+                    fx += Math.cos(mAngle) * force * 1.2;
+                    fy += Math.sin(mAngle) * force * 1.2;
                 }
-            }
 
-            // Update & draw
-            particlesRef.current = particlesRef.current.filter(p => {
-                p.life++;
-                if (p.life > p.maxLife) return false;
-
-                // Orbit around mouse
-                if (mouse.active) {
-                    p.angle += p.orbitSpeed;
-                    const targetX = mouse.x + Math.cos(p.angle) * p.orbitRadius;
-                    const targetY = mouse.y + Math.sin(p.angle) * p.orbitRadius;
-                    p.vx += (targetX - p.x) * 0.02;
-                    p.vy += (targetY - p.y) * 0.02;
-                } else {
-                    // Drift away slowly when mouse leaves
-                    p.vx += (Math.random() - 0.5) * 0.05;
-                    p.vy += (Math.random() - 0.5) * 0.05;
-                }
-
-                p.vx *= 0.95;
-                p.vy *= 0.95;
+                p.vx += (fx - p.vx) * 0.08;
+                p.vy += (fy - p.vy) * 0.08;
                 p.x += p.vx;
                 p.y += p.vy;
 
-                // Fade in/out
-                const lifeRatio = p.life / p.maxLife;
-                let alpha = p.opacity;
-                if (lifeRatio < 0.1) alpha *= lifeRatio / 0.1;
-                if (lifeRatio > 0.7) alpha *= (1 - lifeRatio) / 0.3;
-                if (!mouse.active) alpha *= Math.max(0, 1 - (p.life - p.maxLife * 0.5) / (p.maxLife * 0.5));
+                // Wrap around edges
+                if (p.x < -10) p.x = w + 10;
+                if (p.x > w + 10) p.x = -10;
+                if (p.y < -10) p.y = h + 10;
+                if (p.y > h + 10) p.y = -10;
 
-                // Glow
-                ctx.globalAlpha = alpha * 0.3;
-                const glow = p.size * 4;
-                const gradient = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, glow);
-                gradient.addColorStop(0, 'rgba(190, 200, 255, 0.6)');
-                gradient.addColorStop(1, 'rgba(150, 170, 255, 0)');
-                ctx.fillStyle = gradient;
+                // Draw
+                ctx.globalAlpha = p.alpha;
+                ctx.fillStyle = `rgba(200, 210, 240, ${p.alpha})`;
                 ctx.beginPath();
-                ctx.arc(p.x, p.y, glow, 0, Math.PI * 2);
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
                 ctx.fill();
-
-                // Core
-                ctx.globalAlpha = alpha;
-                ctx.fillStyle = '#d8ddf5';
-                ctx.beginPath();
-                ctx.arc(p.x, p.y, p.size * 0.5, 0, Math.PI * 2);
-                ctx.fill();
-
-                return true;
             });
 
             ctx.globalAlpha = 1;
             animRef.current = requestAnimationFrame(animate);
         };
+
+        // Initial fill to prevent flash
+        ctx.fillStyle = '#06060c';
+        ctx.fillRect(0, 0, w, h);
 
         animRef.current = requestAnimationFrame(animate);
 
