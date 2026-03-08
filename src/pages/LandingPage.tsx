@@ -1,54 +1,27 @@
 import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef } from 'react';
 
 interface Particle {
     x: number;
     y: number;
-    baseX: number;
-    baseY: number;
     vx: number;
     vy: number;
     size: number;
     opacity: number;
-    phase: number;
-    speed: number;
+    life: number;
+    maxLife: number;
+    angle: number;
     orbitRadius: number;
-    orbitAngle: number;
     orbitSpeed: number;
 }
 
 export default function LandingPage() {
     const { user, loading } = useAuth();
     const canvasRef = useRef<HTMLCanvasElement>(null);
-    const mouseRef = useRef({ x: -9999, y: -9999 });
+    const mouseRef = useRef({ x: -9999, y: -9999, active: false });
     const particlesRef = useRef<Particle[]>([]);
     const animRef = useRef<number>(0);
-
-    const initParticles = useCallback((width: number, height: number) => {
-        const particles: Particle[] = [];
-        const count = Math.min(200, Math.floor((width * height) / 6000));
-
-        for (let i = 0; i < count; i++) {
-            const x = Math.random() * width;
-            const y = Math.random() * height;
-            particles.push({
-                x, y,
-                baseX: x,
-                baseY: y,
-                vx: 0,
-                vy: 0,
-                size: Math.random() * 2 + 0.5,
-                opacity: Math.random() * 0.6 + 0.2,
-                phase: Math.random() * Math.PI * 2,
-                speed: 0.2 + Math.random() * 0.8,
-                orbitRadius: 20 + Math.random() * 60,
-                orbitAngle: Math.random() * Math.PI * 2,
-                orbitSpeed: (0.0005 + Math.random() * 0.002) * (Math.random() > 0.5 ? 1 : -1),
-            });
-        }
-        particlesRef.current = particles;
-    }, []);
 
     useEffect(() => {
         const canvas = canvasRef.current;
@@ -59,79 +32,100 @@ export default function LandingPage() {
         const resize = () => {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
-            if (particlesRef.current.length === 0) {
-                initParticles(canvas.width, canvas.height);
-            }
         };
         resize();
         window.addEventListener('resize', resize);
 
         const handleMouseMove = (e: MouseEvent) => {
-            mouseRef.current = { x: e.clientX, y: e.clientY };
+            mouseRef.current = { x: e.clientX, y: e.clientY, active: true };
         };
         const handleMouseLeave = () => {
-            mouseRef.current = { x: -9999, y: -9999 };
+            mouseRef.current = { ...mouseRef.current, active: false };
         };
         window.addEventListener('mousemove', handleMouseMove);
         window.addEventListener('mouseleave', handleMouseLeave);
 
+        const spawnParticle = (mx: number, my: number) => {
+            const angle = Math.random() * Math.PI * 2;
+            const orbitRadius = 15 + Math.random() * 100;
+            const maxLife = 120 + Math.random() * 180;
+
+            particlesRef.current.push({
+                x: mx + Math.cos(angle) * orbitRadius * 0.3,
+                y: my + Math.sin(angle) * orbitRadius * 0.3,
+                vx: (Math.random() - 0.5) * 0.5,
+                vy: (Math.random() - 0.5) * 0.5,
+                size: 0.8 + Math.random() * 1.8,
+                opacity: 0.3 + Math.random() * 0.7,
+                life: 0,
+                maxLife,
+                angle,
+                orbitRadius,
+                orbitSpeed: (0.008 + Math.random() * 0.025) * (Math.random() > 0.5 ? 1 : -1),
+            });
+        };
+
         const animate = () => {
-            ctx.fillStyle = '#06060c';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            const time = Date.now() * 0.001;
             const mouse = mouseRef.current;
-            const mouseRadius = 180;
 
-            particlesRef.current.forEach(p => {
-                // Gentle orbital float
-                p.orbitAngle += p.orbitSpeed;
-                const targetX = p.baseX + Math.cos(p.orbitAngle) * p.orbitRadius * 0.3;
-                const targetY = p.baseY + Math.sin(p.orbitAngle) * p.orbitRadius * 0.3;
+            // Spawn particles near mouse
+            if (mouse.active && particlesRef.current.length < 120) {
+                for (let i = 0; i < 2; i++) {
+                    spawnParticle(mouse.x, mouse.y);
+                }
+            }
 
-                // Mouse repulsion
-                const dx = p.x - mouse.x;
-                const dy = p.y - mouse.y;
-                const dist = Math.sqrt(dx * dx + dy * dy);
+            // Update & draw
+            particlesRef.current = particlesRef.current.filter(p => {
+                p.life++;
+                if (p.life > p.maxLife) return false;
 
-                if (dist < mouseRadius && dist > 0) {
-                    const force = (mouseRadius - dist) / mouseRadius;
-                    const angle = Math.atan2(dy, dx);
-                    p.vx += Math.cos(angle) * force * 3;
-                    p.vy += Math.sin(angle) * force * 3;
+                // Orbit around mouse
+                if (mouse.active) {
+                    p.angle += p.orbitSpeed;
+                    const targetX = mouse.x + Math.cos(p.angle) * p.orbitRadius;
+                    const targetY = mouse.y + Math.sin(p.angle) * p.orbitRadius;
+                    p.vx += (targetX - p.x) * 0.02;
+                    p.vy += (targetY - p.y) * 0.02;
+                } else {
+                    // Drift away slowly when mouse leaves
+                    p.vx += (Math.random() - 0.5) * 0.05;
+                    p.vy += (Math.random() - 0.5) * 0.05;
                 }
 
-                // Spring back to orbit target
-                p.vx += (targetX - p.x) * 0.015;
-                p.vy += (targetY - p.y) * 0.015;
-
-                // Damping
-                p.vx *= 0.92;
-                p.vy *= 0.92;
-
+                p.vx *= 0.95;
+                p.vy *= 0.95;
                 p.x += p.vx;
                 p.y += p.vy;
 
-                // Twinkle
-                const twinkle = 0.4 + 0.6 * Math.sin(time * p.speed + p.phase) ** 2;
-                ctx.globalAlpha = p.opacity * twinkle;
+                // Fade in/out
+                const lifeRatio = p.life / p.maxLife;
+                let alpha = p.opacity;
+                if (lifeRatio < 0.1) alpha *= lifeRatio / 0.1;
+                if (lifeRatio > 0.7) alpha *= (1 - lifeRatio) / 0.3;
+                if (!mouse.active) alpha *= Math.max(0, 1 - (p.life - p.maxLife * 0.5) / (p.maxLife * 0.5));
 
-                // Draw star with slight glow
-                const glow = p.size * 3;
+                // Glow
+                ctx.globalAlpha = alpha * 0.3;
+                const glow = p.size * 4;
                 const gradient = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, glow);
-                gradient.addColorStop(0, 'rgba(200, 210, 255, 0.8)');
-                gradient.addColorStop(0.4, 'rgba(180, 195, 255, 0.3)');
+                gradient.addColorStop(0, 'rgba(190, 200, 255, 0.6)');
                 gradient.addColorStop(1, 'rgba(150, 170, 255, 0)');
                 ctx.fillStyle = gradient;
                 ctx.beginPath();
                 ctx.arc(p.x, p.y, glow, 0, Math.PI * 2);
                 ctx.fill();
 
-                // Core dot
-                ctx.fillStyle = '#d0d8f0';
+                // Core
+                ctx.globalAlpha = alpha;
+                ctx.fillStyle = '#d8ddf5';
                 ctx.beginPath();
-                ctx.arc(p.x, p.y, p.size * 0.6, 0, Math.PI * 2);
+                ctx.arc(p.x, p.y, p.size * 0.5, 0, Math.PI * 2);
                 ctx.fill();
+
+                return true;
             });
 
             ctx.globalAlpha = 1;
@@ -146,7 +140,7 @@ export default function LandingPage() {
             window.removeEventListener('mousemove', handleMouseMove);
             window.removeEventListener('mouseleave', handleMouseLeave);
         };
-    }, [initParticles]);
+    }, []);
 
     if (!loading && user) return <Navigate to="/home" replace />;
 
