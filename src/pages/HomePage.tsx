@@ -8,9 +8,12 @@ interface MapConstellation {
     session: SessionData;
     stars: Star[];
     connections: Connection[];
-    cx: number;  // center x on world map
-    cy: number;  // center y on world map
+    cx: number;
+    cy: number;
 }
+
+const MIN_ZOOM = 0.15;
+const MAX_ZOOM = 3;
 
 export default function HomePage() {
     const { user, logout } = useAuth();
@@ -26,6 +29,14 @@ export default function HomePage() {
     const constellationsRef = useRef<MapConstellation[]>([]);
     const animRef = useRef<number>(0);
 
+    // Touch refs for mobile
+    const touchRef = useRef<{
+        mode: 'none' | 'pan' | 'pinch';
+        startX: number; startY: number;
+        camX: number; camY: number;
+        initialDist: number; initialZoom: number;
+    }>({ mode: 'none', startX: 0, startY: 0, camX: 0, camY: 0, initialDist: 0, initialZoom: 1 });
+
     useEffect(() => {
         fetchAPI<{ success: boolean; data: SessionData[] }>('/api/sessions')
             .then(res => setSessions(res.data))
@@ -33,7 +44,7 @@ export default function HomePage() {
             .finally(() => setLoading(false));
     }, []);
 
-    // Build map constellations from sessions
+    // Build map constellations from sessions — random placement with collision avoidance
     useEffect(() => {
         if (sessions.length === 0) {
             constellationsRef.current = [];
@@ -41,10 +52,10 @@ export default function HomePage() {
         }
 
         const mapConstellations: MapConstellation[] = [];
-        const cols = Math.ceil(Math.sqrt(sessions.length));
-        const spacing = 400;
+        const placed: { x: number; y: number }[] = [];
+        const minDist = 500; // minimum distance between constellations
 
-        sessions.forEach((session, i) => {
+        sessions.forEach((session) => {
             let stars: Star[] = [];
             let connections: Connection[] = [];
             try {
@@ -53,10 +64,18 @@ export default function HomePage() {
                 connections = c.connections || [];
             } catch { }
 
-            const col = i % cols;
-            const row = Math.floor(i / cols);
-            const cx = col * spacing;
-            const cy = row * spacing;
+            // Random placement with collision avoidance
+            let cx = 0, cy = 0, tries = 0;
+            const range = Math.max(800, sessions.length * 350);
+            do {
+                cx = (Math.random() - 0.5) * range;
+                cy = (Math.random() - 0.5) * range;
+                tries++;
+            } while (
+                tries < 100 &&
+                placed.some(p => Math.sqrt((p.x - cx) ** 2 + (p.y - cy) ** 2) < minDist)
+            );
+            placed.push({ x: cx, y: cy });
 
             mapConstellations.push({ session, stars, connections, cx, cy });
         });
@@ -67,7 +86,14 @@ export default function HomePage() {
         if (mapConstellations.length > 0) {
             const avgX = mapConstellations.reduce((s, c) => s + c.cx, 0) / mapConstellations.length;
             const avgY = mapConstellations.reduce((s, c) => s + c.cy, 0) / mapConstellations.length;
-            setCamera({ x: -avgX, y: -avgY, zoom: 1 });
+            // Auto-zoom to fit all
+            let maxSpread = 1;
+            mapConstellations.forEach(c => {
+                const dist = Math.sqrt((c.cx - avgX) ** 2 + (c.cy - avgY) ** 2);
+                if (dist > maxSpread) maxSpread = dist;
+            });
+            const fitZoom = Math.min(1, 400 / (maxSpread + 200));
+            setCamera({ x: -avgX, y: -avgY, zoom: Math.max(MIN_ZOOM, fitZoom) });
         }
     }, [sessions]);
 
@@ -79,22 +105,28 @@ export default function HomePage() {
         if (!ctx) return;
 
         let w = 0, h = 0;
+        const dpr = window.devicePixelRatio || 1;
         const resize = () => {
-            w = canvas.width = window.innerWidth;
-            h = canvas.height = window.innerHeight;
+            w = window.innerWidth;
+            h = window.innerHeight;
+            canvas.width = w * dpr;
+            canvas.height = h * dpr;
+            canvas.style.width = w + 'px';
+            canvas.style.height = h + 'px';
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
         };
         resize();
         window.addEventListener('resize', resize);
 
-        // Background stars
+        // Background stars — huge area
         interface BGStar { x: number; y: number; s: number; b: number; speed: number; phase: number; }
         const bgStars: BGStar[] = [];
-        for (let i = 0; i < 600; i++) {
+        for (let i = 0; i < 800; i++) {
             bgStars.push({
-                x: Math.random() * 20000 - 10000,
-                y: Math.random() * 20000 - 10000,
+                x: Math.random() * 40000 - 20000,
+                y: Math.random() * 40000 - 20000,
                 s: Math.random() * 1.5 + 0.5,
-                b: 0.2 + Math.random() * 0.4,
+                b: 0.15 + Math.random() * 0.35,
                 speed: 0.3 + Math.random() * 1,
                 phase: Math.random() * Math.PI * 2,
             });
@@ -125,30 +157,30 @@ export default function HomePage() {
 
             // Draw constellations
             constellationsRef.current.forEach(constellation => {
-                const { stars, connections, cx: mapX, cy: mapY, session } = constellation;
+                const { stars, connections, cx: mapX, cy: mapY } = constellation;
                 if (stars.length === 0) return;
 
-                // Calculate screen positions
+                // Screen-space positions
                 const screenStars = stars.map(star => ({
-                    ...star,
                     sx: cx + (mapX + star.x * 1.5) * z,
                     sy: cy + (mapY + star.y * 1.5) * z,
+                    star,
                 }));
 
-                // Check if any star is visible
+                // Frustum cull: skip if completely offscreen
                 const anyVisible = screenStars.some(s =>
                     s.sx > -100 && s.sx < w + 100 && s.sy > -100 && s.sy < h + 100
                 );
                 if (!anyVisible) return;
 
                 // Connections
-                ctx.strokeStyle = 'rgba(131, 178, 224, 0.7)';
-                ctx.lineWidth = 2.5 * z;
                 connections.forEach(conn => {
-                    const from = screenStars.find(s => s.id === conn.from);
-                    const to = screenStars.find(s => s.id === conn.to);
+                    const from = screenStars.find(s => s.star.id === conn.from);
+                    const to = screenStars.find(s => s.star.id === conn.to);
                     if (!from || !to) return;
                     ctx.globalAlpha = 0.8;
+                    ctx.strokeStyle = 'rgba(160, 185, 210, 0.45)';
+                    ctx.lineWidth = Math.max(1, 2.5 * z);
                     ctx.beginPath();
                     ctx.moveTo(from.sx, from.sy);
                     ctx.lineTo(to.sx, to.sy);
@@ -156,25 +188,22 @@ export default function HomePage() {
                 });
 
                 // Stars
-                screenStars.forEach(star => {
-                    const r = Math.max(4, (star.size || 3) * z * 2);
-                    const twinkle = 0.8 + 0.2 * Math.sin(time * 1.5 + star.brightness * 10);
+                screenStars.forEach(({ sx, sy, star }) => {
+                    const r = Math.max(2, (star.size * 3 + 4) * Math.max(z, 0.4));
 
                     // Glow
-                    ctx.globalAlpha = 0.5 * twinkle;
-                    const grad = ctx.createRadialGradient(star.sx, star.sy, 0, star.sx, star.sy, r * 5);
-                    grad.addColorStop(0, 'rgba(131, 178, 224, 0.8)');
-                    grad.addColorStop(1, 'rgba(131, 178, 224, 0)');
-                    ctx.fillStyle = grad;
-                    ctx.beginPath();
-                    ctx.arc(star.sx, star.sy, r * 5, 0, Math.PI * 2);
-                    ctx.fill();
+                    ctx.globalAlpha = 0.4 * star.brightness;
+                    const glow = ctx.createRadialGradient(sx, sy, 0, sx, sy, r * 4);
+                    glow.addColorStop(0, 'rgba(180, 200, 225, 0.3)');
+                    glow.addColorStop(1, 'transparent');
+                    ctx.fillStyle = glow;
+                    ctx.fillRect(sx - r * 4, sy - r * 4, r * 8, r * 8);
 
                     // Core
-                    ctx.globalAlpha = 0.95 * twinkle;
+                    ctx.globalAlpha = 0.9 * star.brightness;
                     ctx.fillStyle = '#e8f0ff';
                     ctx.beginPath();
-                    ctx.arc(star.sx, star.sy, r, 0, Math.PI * 2);
+                    ctx.arc(sx, sy, r, 0, Math.PI * 2);
                     ctx.fill();
                 });
             });
@@ -187,7 +216,7 @@ export default function HomePage() {
         return () => { cancelAnimationFrame(animRef.current); window.removeEventListener('resize', resize); };
     }, [camera]);
 
-    // Mouse handlers for pan
+    // === Mouse handlers ===
     const handleMouseDown = useCallback((e: React.MouseEvent) => {
         if (e.button !== 0) return;
         dragRef.current = { dragging: true, startX: e.clientX, startY: e.clientY, camX: camera.x, camY: camera.y };
@@ -204,50 +233,125 @@ export default function HomePage() {
         dragRef.current.dragging = false;
     }, []);
 
-    // Zoom with scroll
     const handleWheel = useCallback((e: React.WheelEvent) => {
         e.preventDefault();
         const factor = e.deltaY > 0 ? 0.9 : 1.1;
         setCamera(prev => ({
             ...prev,
-            zoom: Math.max(0.3, Math.min(3, prev.zoom * factor)),
+            zoom: Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, prev.zoom * factor)),
         }));
     }, []);
 
-    // Click to select constellation
+    // === Touch handlers for mobile ===
+    const getTouchDist = (t1: React.Touch, t2: React.Touch) =>
+        Math.sqrt((t1.clientX - t2.clientX) ** 2 + (t1.clientY - t2.clientY) ** 2);
+
+    const handleTouchStart = useCallback((e: React.TouchEvent) => {
+        e.preventDefault();
+        if (e.touches.length === 2) {
+            // Pinch zoom
+            const dist = getTouchDist(e.touches[0], e.touches[1]);
+            touchRef.current = {
+                mode: 'pinch',
+                startX: (e.touches[0].clientX + e.touches[1].clientX) / 2,
+                startY: (e.touches[0].clientY + e.touches[1].clientY) / 2,
+                camX: camera.x, camY: camera.y,
+                initialDist: dist, initialZoom: camera.zoom,
+            };
+        } else if (e.touches.length === 1) {
+            // Pan
+            touchRef.current = {
+                mode: 'pan',
+                startX: e.touches[0].clientX, startY: e.touches[0].clientY,
+                camX: camera.x, camY: camera.y,
+                initialDist: 0, initialZoom: camera.zoom,
+            };
+        }
+    }, [camera]);
+
+    const handleTouchMove = useCallback((e: React.TouchEvent) => {
+        e.preventDefault();
+        const t = touchRef.current;
+        if (t.mode === 'pinch' && e.touches.length === 2) {
+            const dist = getTouchDist(e.touches[0], e.touches[1]);
+            const scale = dist / t.initialDist;
+            const newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, t.initialZoom * scale));
+            const midX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+            const midY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+            const dx = (midX - t.startX) / newZoom;
+            const dy = (midY - t.startY) / newZoom;
+            setCamera({ x: t.camX + dx, y: t.camY + dy, zoom: newZoom });
+        } else if (t.mode === 'pan' && e.touches.length === 1) {
+            const dx = (e.touches[0].clientX - t.startX) / camera.zoom;
+            const dy = (e.touches[0].clientY - t.startY) / camera.zoom;
+            setCamera(prev => ({ ...prev, x: t.camX + dx, y: t.camY + dy }));
+        }
+    }, [camera.zoom]);
+
+    const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+        // Detect tap for selection
+        if (touchRef.current.mode === 'pan' && e.changedTouches.length === 1) {
+            const t = e.changedTouches[0];
+            const dx = Math.abs(t.clientX - touchRef.current.startX);
+            const dy = Math.abs(t.clientY - touchRef.current.startY);
+            if (dx < 10 && dy < 10) {
+                // Tap → find constellation
+                const canvas = canvasRef.current;
+                if (canvas) {
+                    const rect = canvas.getBoundingClientRect();
+                    const mx = t.clientX - rect.left;
+                    const my = t.clientY - rect.top;
+                    const w = canvas.clientWidth;
+                    const h = canvas.clientHeight;
+                    const screenCx = w / 2 + camera.x * camera.zoom;
+                    const screenCy = h / 2 + camera.y * camera.zoom;
+                    const z = camera.zoom;
+
+                    let found: MapConstellation | null = null;
+                    let minD = Infinity;
+                    constellationsRef.current.forEach(constellation => {
+                        constellation.stars.forEach(star => {
+                            const sx = screenCx + (constellation.cx + star.x * 1.5) * z;
+                            const sy = screenCy + (constellation.cy + star.y * 1.5) * z;
+                            const d = Math.sqrt((mx - sx) ** 2 + (my - sy) ** 2);
+                            if (d < 40 && d < minD) { minD = d; found = constellation; }
+                        });
+                    });
+                    setSelected(found);
+                }
+            }
+        }
+        touchRef.current.mode = 'none';
+    }, [camera]);
+
+    // Click to select constellation (desktop)
     const handleClick = useCallback((e: React.MouseEvent) => {
         if (dragRef.current.dragging) return;
         const canvas = canvasRef.current;
         if (!canvas) return;
-
         const rect = canvas.getBoundingClientRect();
         const mx = e.clientX - rect.left;
         const my = e.clientY - rect.top;
-        const w = canvas.width;
-        const h = canvas.height;
-        const cx = w / 2 + camera.x * camera.zoom;
-        const cy = h / 2 + camera.y * camera.zoom;
+        const w = canvas.clientWidth;
+        const h = canvas.clientHeight;
+        const screenCx = w / 2 + camera.x * camera.zoom;
+        const screenCy = h / 2 + camera.y * camera.zoom;
         const z = camera.zoom;
 
         let found: MapConstellation | null = null;
         let minDist = Infinity;
-
         constellationsRef.current.forEach(constellation => {
             constellation.stars.forEach(star => {
-                const sx = cx + (constellation.cx + star.x * 1.5) * z;
-                const sy = cy + (constellation.cy + star.y * 1.5) * z;
+                const sx = screenCx + (constellation.cx + star.x * 1.5) * z;
+                const sy = screenCy + (constellation.cy + star.y * 1.5) * z;
                 const dist = Math.sqrt((mx - sx) ** 2 + (my - sy) ** 2);
-                if (dist < 30 && dist < minDist) {
-                    minDist = dist;
-                    found = constellation;
-                }
+                if (dist < 30 && dist < minDist) { minDist = dist; found = constellation; }
             });
         });
-
         setSelected(found);
     }, [camera]);
 
-    // Detect drag vs click
+    // Detect drag vs click (desktop)
     const mouseDownPos = useRef({ x: 0, y: 0 });
     const handlePointerDown = useCallback((e: React.MouseEvent) => {
         mouseDownPos.current = { x: e.clientX, y: e.clientY };
@@ -272,7 +376,7 @@ export default function HomePage() {
     }
 
     return (
-        <div style={{ position: 'relative', height: '100vh', overflow: 'hidden', background: '#050510', cursor: dragRef.current.dragging ? 'grabbing' : 'grab' }}>
+        <div style={{ position: 'relative', height: '100vh', overflow: 'hidden', background: '#050510', cursor: dragRef.current.dragging ? 'grabbing' : 'grab', touchAction: 'none' }}>
             <canvas
                 ref={canvasRef}
                 style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
@@ -281,6 +385,9 @@ export default function HomePage() {
                 onMouseUp={handlePointerUp}
                 onMouseLeave={handleMouseUp}
                 onWheel={handleWheel}
+                onTouchStart={handleTouchStart}
+                onTouchMove={handleTouchMove}
+                onTouchEnd={handleTouchEnd}
             />
 
             {/* Top UI overlay */}
@@ -337,8 +444,8 @@ export default function HomePage() {
                 position: 'absolute', bottom: '2rem', right: '1.5rem', zIndex: 10,
                 display: 'flex', flexDirection: 'column', gap: '0.25rem',
             }}>
-                <button onClick={() => setCamera(p => ({ ...p, zoom: Math.min(3, p.zoom * 1.2) }))} style={zoomBtnStyle}>+</button>
-                <button onClick={() => setCamera(p => ({ ...p, zoom: Math.max(0.3, p.zoom * 0.8) }))} style={zoomBtnStyle}>−</button>
+                <button onClick={() => setCamera(p => ({ ...p, zoom: Math.min(MAX_ZOOM, p.zoom * 1.2) }))} style={zoomBtnStyle}>+</button>
+                <button onClick={() => setCamera(p => ({ ...p, zoom: Math.max(MIN_ZOOM, p.zoom * 0.8) }))} style={zoomBtnStyle}>−</button>
             </div>
 
             {/* Selected constellation card */}
