@@ -198,7 +198,9 @@ export default function NewSessionPage() {
                     )}
                     {stars.length === 0 && (
                         <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center', color: 'var(--text-tertiary)', pointerEvents: 'none' }}>
-                            <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem', opacity: 0.5 }}>🌌</div>
+                            <div style={{ marginBottom: '0.75rem', opacity: 0.5 }}>
+                                <img src="/logo.svg" alt="Astera" style={{ width: '40px', height: '40px' }} />
+                            </div>
                             <div style={{ fontSize: '0.9rem', lineHeight: 1.6 }}>마이크로 생각을 말하거나<br />아래에 키워드를 입력해보세요</div>
                         </div>
                     )}

@@ -48,8 +48,9 @@ export default function LandingPage() {
             <div style={{ position: 'relative', zIndex: 1 }}>
                 {/* Nav */}
                 <nav style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.25rem clamp(1rem, 5vw, 3rem)' }}>
-                    <div style={{ fontSize: '1.1rem', fontWeight: '600', color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
-                        🌌 Astera
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.1rem', fontWeight: '600', color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
+                        <img src="/logo.svg" alt="Astera" style={{ width: '20px', height: '20px' }} />
+                        Astera
                     </div>
                     <div style={{ display: 'flex', gap: '0.5rem' }}>
                         <Link to="/login">
@@ -67,7 +68,9 @@ export default function LandingPage() {
 
                 {/* Hero */}
                 <section style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', minHeight: 'calc(100vh - 200px)', padding: '3rem clamp(1.5rem, 5vw, 2rem)' }}>
-                    <div style={{ fontSize: '3.5rem', marginBottom: '1.5rem', animation: 'fadeIn 0.8s ease' }}>🌌</div>
+                    <div style={{ marginBottom: '1.5rem', animation: 'fadeIn 0.8s ease' }}>
+                        <img src="/logo.svg" alt="Astera" style={{ width: '56px', height: '56px' }} />
+                    </div>
                     <h1 style={{ fontSize: 'clamp(1.8rem, 5vw, 3rem)', fontWeight: '700', marginBottom: '1rem', lineHeight: 1.25, color: 'var(--text-primary)', letterSpacing: '-0.03em', animation: 'fadeIn 0.8s ease 0.1s both' }}>
                         당신의 생각이<br />별자리가 되는 곳
                     </h1>

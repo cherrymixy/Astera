@@ -43,7 +43,9 @@ export default function HomePage() {
                     <div style={{ textAlign: 'center', color: 'var(--text-tertiary)', padding: '3rem' }}>불러오는 중...</div>
                 ) : sessions.length === 0 ? (
                     <div style={{ textAlign: 'center', padding: '4rem 1rem' }}>
-                        <div style={{ fontSize: '3rem', marginBottom: '1rem', opacity: 0.3 }}>🌌</div>
+                        <div style={{ marginBottom: '1rem', opacity: 0.3 }}>
+                            <img src="/logo.svg" alt="Astera" style={{ width: '48px', height: '48px' }} />
+                        </div>
                         <p style={{ color: 'var(--text-tertiary)', fontSize: '0.9rem' }}>아직 만든 별자리가 없어요</p>
                     </div>
                 ) : (
