@@ -380,20 +380,39 @@ export default function HomePage() {
                         ⭐ {selected.stars.length}개 · {new Date(selected.session.createdAt).toLocaleDateString('ko-KR')}
                     </div>
 
-                    {selected.stars.length > 0 && (
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', marginBottom: '1.25rem' }}>
-                            {selected.stars.map(star => (
-                                <span key={star.id} style={{
-                                    padding: '0.3rem 0.7rem', fontSize: '0.75rem',
-                                    background: 'rgba(131, 178, 224, 0.1)',
-                                    border: '1px solid rgba(131, 178, 224, 0.15)',
-                                    borderRadius: '20px', color: 'rgba(255,255,255,0.6)',
-                                }}>
-                                    {star.keyword}
-                                </span>
-                            ))}
-                        </div>
-                    )}
+                    {selected.stars.length > 0 && (() => {
+                        const xs = selected.stars.map(s => s.x);
+                        const ys = selected.stars.map(s => s.y);
+                        const minX = Math.min(...xs), maxX = Math.max(...xs);
+                        const minY = Math.min(...ys), maxY = Math.max(...ys);
+                        const rangeX = maxX - minX || 1, rangeY = maxY - minY || 1;
+                        const pad = 24, svgW = 320, svgH = 160;
+                        const scale = Math.min((svgW - pad * 2) / rangeX, (svgH - pad * 2) / rangeY);
+                        const ox = (svgW - rangeX * scale) / 2, oy = (svgH - rangeY * scale) / 2;
+                        const pos = (s: Star) => ({ px: ox + (s.x - minX) * scale, py: oy + (s.y - minY) * scale });
+
+                        return (
+                            <svg width="100%" viewBox={`0 0 ${svgW} ${svgH}`} style={{ marginBottom: '1.25rem', display: 'block' }}>
+                                {selected.connections.map((c, i) => {
+                                    const f = selected.stars.find(s => s.id === c.from);
+                                    const t = selected.stars.find(s => s.id === c.to);
+                                    if (!f || !t) return null;
+                                    const fp = pos(f), tp = pos(t);
+                                    return <line key={i} x1={fp.px} y1={fp.py} x2={tp.px} y2={tp.py} stroke="rgba(131,178,224,0.3)" strokeWidth="1" />;
+                                })}
+                                {selected.stars.map(s => {
+                                    const p = pos(s);
+                                    return (
+                                        <g key={s.id}>
+                                            <circle cx={p.px} cy={p.py} r={Math.max(6, (s.size || 3) * 1.5)} fill="rgba(131,178,224,0.08)" />
+                                            <circle cx={p.px} cy={p.py} r={Math.max(2, (s.size || 3) * 0.6)} fill="#c8d8f0" />
+                                            <text x={p.px} y={p.py + 14} textAnchor="middle" fill="rgba(255,255,255,0.35)" fontSize="8" fontFamily="inherit">{s.keyword}</text>
+                                        </g>
+                                    );
+                                })}
+                            </svg>
+                        );
+                    })()}
 
                     <button
                         onClick={() => navigate(`/session/${selected.session.id}`)}
