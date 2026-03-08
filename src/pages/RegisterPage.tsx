@@ -26,12 +26,14 @@ export default function RegisterPage() {
     };
 
     return (
-        <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)', padding: 'clamp(1rem, 5vw, 2rem)' }}>
+        <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)', padding: 'clamp(1rem, 5vw, 2rem)', overflow: 'hidden' }}>
             <div style={{ width: '100%', maxWidth: '380px' }}>
                 <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
-                    <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem' }}>✨</div>
+                    <div style={{ marginBottom: '0.75rem' }}>
+                        <img src="/logo.svg" alt="Astera" style={{ width: '40px', height: '40px' }} />
+                    </div>
                     <h1 style={{ fontSize: '1.5rem', fontWeight: '700', marginBottom: '0.5rem', color: 'var(--text-primary)' }}>회원가입</h1>
-                    <p style={{ fontSize: '0.9rem', color: 'var(--text-tertiary)' }}>나만의 철학 별자리 여정을 시작하세요</p>
+                    <p style={{ fontSize: '0.9rem', color: 'var(--text-tertiary)' }}>일상을 사랑하고 철학을 실천해 보세요.</p>
                 </div>
 
                 <form onSubmit={handleSubmit}>
@@ -40,7 +42,7 @@ export default function RegisterPage() {
                     )}
                     <div style={{ marginBottom: '0.75rem' }}>
                         <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-tertiary)', marginBottom: '0.35rem' }}>이름</label>
-                        <input type="text" value={name} onChange={e => setName(e.target.value)} required autoFocus placeholder="별자리 탐험가" />
+                        <input type="text" value={name} onChange={e => setName(e.target.value)} required autoFocus placeholder="전승아" />
                     </div>
                     <div style={{ marginBottom: '0.75rem' }}>
                         <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-tertiary)', marginBottom: '0.35rem' }}>이메일</label>

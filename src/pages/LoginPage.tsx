@@ -25,7 +25,7 @@ export default function LoginPage() {
     };
 
     return (
-        <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)', padding: 'clamp(1rem, 5vw, 2rem)' }}>
+        <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)', padding: 'clamp(1rem, 5vw, 2rem)', overflow: 'hidden' }}>
             <div style={{ width: '100%', maxWidth: '380px' }}>
                 <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
                     <div style={{ marginBottom: '0.75rem' }}>
@@ -34,7 +34,7 @@ export default function LoginPage() {
                     <h1 style={{ fontSize: '1.5rem', fontWeight: '700', marginBottom: '0.5rem', color: 'var(--text-primary)' }}>
                         Astera
                     </h1>
-                    <p style={{ fontSize: '0.9rem', color: 'var(--text-tertiary)' }}>로그인하고 별자리를 이어가세요</p>
+                    <p style={{ fontSize: '0.9rem', color: 'var(--text-tertiary)' }}>로그인하고 철학을 사랑해 보세요.</p>
                 </div>
 
                 <form onSubmit={handleSubmit}>
