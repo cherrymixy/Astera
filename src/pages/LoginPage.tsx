@@ -62,9 +62,8 @@ export default function LoginPage() {
                     </Link>
                 </div>
 
-                <p style={{ textAlign: 'center', marginTop: '2rem', fontSize: '0.7rem', color: 'rgba(255,255,255,0.18)', lineHeight: 1.6 }}>
-                    Astera는 바이브 코딩으로 만들어진 서비스입니다.<br />
-                    개인정보를 수집하거나 외부에 공유하지 않습니다.
+                <p style={{ textAlign: 'center', marginTop: '2rem', fontSize: '0.7rem', color: 'rgba(255,255,255,0.18)' }}>
+                    바이브 코딩으로 만들어졌으며, 개인정보를 수집하지 않습니다.
                 </p>
             </div>
         </div>
