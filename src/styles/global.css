@@ -57,7 +57,7 @@ input::placeholder {
     background: var(--accent);
     border: none;
     border-radius: var(--radius-md);
-    color: white;
+    color: #121212;
     font-size: 1rem;
     font-weight: 600;
     cursor: pointer;
