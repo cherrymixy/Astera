@@ -62,6 +62,11 @@ export default function RegisterPage() {
                         이미 계정이 있으신가요? <span style={{ color: 'var(--accent)', fontWeight: '500' }}>로그인</span>
                     </Link>
                 </div>
+
+                <p style={{ textAlign: 'center', marginTop: '2rem', fontSize: '0.7rem', color: 'rgba(255,255,255,0.18)', lineHeight: 1.6 }}>
+                    Astera는 바이브 코딩으로 만들어진 서비스입니다.<br />
+                    개인정보를 수집하거나 외부에 공유하지 않습니다.
+                </p>
             </div>
         </div>
     );
