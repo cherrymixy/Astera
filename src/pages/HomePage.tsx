@@ -93,8 +93,8 @@ export default function HomePage() {
             bgStars.push({
                 x: Math.random() * 4000 - 2000,
                 y: Math.random() * 4000 - 2000,
-                s: Math.random() * 0.8 + 0.2,
-                b: 0.1 + Math.random() * 0.25,
+                s: Math.random() * 1.5 + 0.5,
+                b: 0.2 + Math.random() * 0.4,
                 speed: 0.3 + Math.random() * 1,
                 phase: Math.random() * Math.PI * 2,
             });
@@ -347,8 +347,8 @@ export default function HomePage() {
                     style={{
                         position: 'absolute', top: '50%', left: '50%',
                         transform: 'translate(-50%, -50%)', zIndex: 20,
-                        background: 'rgba(12, 12, 20, 0.92)', backdropFilter: 'blur(16px)',
-                        border: '1px solid rgba(255,255,255,0.08)',
+                        background: 'rgba(20, 22, 35, 0.95)', backdropFilter: 'blur(16px)',
+                        border: 'none',
                         borderRadius: '16px', padding: '2rem',
                         maxWidth: '380px', width: '90%',
                         animation: 'fadeIn 0.2s ease',
@@ -357,7 +357,7 @@ export default function HomePage() {
                 >
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
                         <h2 style={{ fontSize: '1.15rem', fontWeight: '600', color: 'var(--text-primary)' }}>
-                            {selected.session.title || '무제 별자리'}
+                            인식한 사물
                         </h2>
                         <button onClick={() => setSelected(null)} style={{
                             background: 'none', border: 'none', color: 'rgba(255,255,255,0.3)',
@@ -366,7 +366,7 @@ export default function HomePage() {
                     </div>
 
                     <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.3)', marginBottom: '1rem' }}>
-                        ⭐ {selected.stars.length}개 · {new Date(selected.session.createdAt).toLocaleDateString('ko-KR')}
+                        {selected.session.title || '무제'} · {selected.stars.length}개 · {new Date(selected.session.createdAt).toLocaleDateString('ko-KR')}
                     </div>
 
                     {selected.stars.length > 0 && (
