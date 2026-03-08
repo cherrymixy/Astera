@@ -6,6 +6,7 @@ interface ConstellationCanvasProps {
     connections: Connection[];
     animated?: boolean;
     interactive?: boolean;
+    fillParent?: boolean;
 }
 
 function generateBackgroundStars(count: number, w: number, h: number) {
@@ -27,6 +28,7 @@ export default function ConstellationCanvas({
     connections,
     animated = true,
     interactive = true,
+    fillParent = false,
 }: ConstellationCanvasProps) {
     const containerRef = useRef<HTMLDivElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -44,8 +46,13 @@ export default function ConstellationCanvas({
             if (containerRef.current) {
                 const containerWidth = containerRef.current.offsetWidth;
                 const maxWidth = Math.min(containerWidth, 900);
-                const height = Math.max(300, Math.min(maxWidth * 0.75, 650));
-                setDimensions({ width: maxWidth, height });
+                let h: number;
+                if (fillParent && containerRef.current.parentElement) {
+                    h = containerRef.current.parentElement.offsetHeight;
+                } else {
+                    h = Math.max(300, Math.min(maxWidth * 0.75, 650));
+                }
+                setDimensions({ width: maxWidth, height: h });
             }
         };
         updateDimensions();
@@ -258,7 +265,7 @@ export default function ConstellationCanvas({
     return (
         <div
             ref={containerRef}
-            style={{ width: '100%', maxWidth: '900px', margin: '0 auto' }}
+            style={{ width: '100%', maxWidth: '900px', margin: '0 auto', height: fillParent ? '100%' : 'auto' }}
         >
             <canvas
                 ref={canvasRef}

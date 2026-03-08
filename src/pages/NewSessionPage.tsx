@@ -192,7 +192,7 @@ export default function NewSessionPage() {
             {/* 캔버스 — flex:1로 남은 공간 전부 사용 */}
             <div style={{ flex: 1, minHeight: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0.5rem clamp(0.5rem, 3vw, 1.5rem)', position: 'relative' }}>
                 <div style={{ width: '100%', maxWidth: '900px', height: '100%', position: 'relative' }}>
-                    <ConstellationCanvas stars={stars} connections={connections} animated={true} interactive={true} />
+                    <ConstellationCanvas stars={stars} connections={connections} animated={true} interactive={true} fillParent={true} />
                     {lastAddedKeyword && (
                         <div style={{ position: 'absolute', top: '12px', left: '50%', transform: 'translateX(-50%)', padding: '0.35rem 0.9rem', background: 'rgba(131,178,224,0.12)', borderRadius: '20px', color: 'var(--accent)', fontSize: '0.8rem', animation: 'fadeIn 0.4s ease', pointerEvents: 'none' }}>
                             {lastAddedKeyword}
