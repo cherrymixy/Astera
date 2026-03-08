@@ -89,10 +89,10 @@ export default function HomePage() {
         // Background stars
         interface BGStar { x: number; y: number; s: number; b: number; speed: number; phase: number; }
         const bgStars: BGStar[] = [];
-        for (let i = 0; i < 200; i++) {
+        for (let i = 0; i < 600; i++) {
             bgStars.push({
-                x: Math.random() * 4000 - 2000,
-                y: Math.random() * 4000 - 2000,
+                x: Math.random() * 20000 - 10000,
+                y: Math.random() * 20000 - 10000,
                 s: Math.random() * 1.5 + 0.5,
                 b: 0.2 + Math.random() * 0.4,
                 speed: 0.3 + Math.random() * 1,
@@ -357,7 +357,7 @@ export default function HomePage() {
                 >
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
                         <h2 style={{ fontSize: '1.15rem', fontWeight: '600', color: 'var(--text-primary)' }}>
-                            인식한 사물
+                            {selected.session.title || '무제 별자리'}
                         </h2>
                         <button onClick={() => setSelected(null)} style={{
                             background: 'none', border: 'none', color: 'rgba(255,255,255,0.3)',
@@ -366,7 +366,7 @@ export default function HomePage() {
                     </div>
 
                     <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.3)', marginBottom: '1rem' }}>
-                        {selected.session.title || '무제'} · {selected.stars.length}개 · {new Date(selected.session.createdAt).toLocaleDateString('ko-KR')}
+                        {selected.stars.length}개 · {new Date(selected.session.createdAt).toLocaleDateString('ko-KR')}
                     </div>
 
                     {selected.stars.length > 0 && (

@@ -97,7 +97,6 @@ export default function CameraCapturePage() {
                 ) : (
                     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', gap: '2.5rem' }}>
                         <div>
-                            <img src="/logo.svg" alt="Astera" style={{ width: '40px', height: '40px', opacity: 0.5, marginBottom: '1.25rem' }} />
                             <h2 style={{ fontSize: 'clamp(1.2rem, 3vw, 1.5rem)', fontWeight: '300', marginBottom: '0.6rem', letterSpacing: '0.06em', color: 'rgba(255,255,255,0.9)' }}>사물을 선택해보세요</h2>
                             <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: 'clamp(0.8rem, 1.5vw, 0.85rem)', lineHeight: 1.7, letterSpacing: '0.02em' }}>AI가 사물을 인식하고<br />철학적 대화를 시작합니다</p>
                         </div>
