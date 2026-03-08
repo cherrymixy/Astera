@@ -44,7 +44,7 @@ export default function ConstellationCanvas({
             if (containerRef.current) {
                 const containerWidth = containerRef.current.offsetWidth;
                 const maxWidth = Math.min(containerWidth, 900);
-                const height = Math.min(maxWidth * 0.65, 600);
+                const height = Math.max(300, Math.min(maxWidth * 0.75, 650));
                 setDimensions({ width: maxWidth, height });
             }
         };

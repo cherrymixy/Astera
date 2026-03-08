@@ -177,7 +177,7 @@ export default function NewSessionPage() {
             {/* 헤더 */}
             <div style={{ padding: '1rem clamp(1rem, 5vw, 1.5rem)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <Link to="/home" style={{ color: 'var(--text-tertiary)', fontSize: '0.9rem', textDecoration: 'none' }}>← 돌아가기</Link>
-                <div style={{ fontSize: '0.85rem', color: 'var(--text-tertiary)' }}>⭐ {stars.length}개의 별</div>
+                <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.25)', letterSpacing: '0.03em' }}>{stars.length}개의 별</div>
             </div>
 
             {/* 메인 캔버스 영역 */}
@@ -193,15 +193,12 @@ export default function NewSessionPage() {
                     <ConstellationCanvas stars={stars} connections={connections} animated={true} interactive={true} />
                     {lastAddedKeyword && (
                         <div style={{ position: 'absolute', top: '16px', left: '50%', transform: 'translateX(-50%)', padding: '0.4rem 1rem', background: 'var(--accent-soft)', borderRadius: '20px', color: 'var(--accent)', fontSize: '0.85rem', animation: 'fadeIn 0.4s ease', pointerEvents: 'none' }}>
-                            ✨ {lastAddedKeyword}
+                            {lastAddedKeyword}
                         </div>
                     )}
                     {stars.length === 0 && (
-                        <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center', color: 'var(--text-tertiary)', pointerEvents: 'none' }}>
-                            <div style={{ marginBottom: '0.75rem', opacity: 0.5 }}>
-                                <img src="/logo.svg" alt="Astera" style={{ width: '40px', height: '40px' }} />
-                            </div>
-                            <div style={{ fontSize: '0.9rem', lineHeight: 1.6 }}>마이크로 생각을 말하거나<br />아래에 키워드를 입력해보세요</div>
+                        <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center', color: 'rgba(255,255,255,0.25)', pointerEvents: 'none' }}>
+                            <div style={{ fontSize: '0.85rem', lineHeight: 1.7 }}>마이크로 생각을 말하거나<br />아래에 키워드를 입력해보세요</div>
                         </div>
                     )}
                 </div>
@@ -222,7 +219,7 @@ export default function NewSessionPage() {
                             {isRecording ? '⏹' : '🎤'}
                         </button>
                         <button onClick={handleFinish} disabled={saving || stars.length === 0}
-                            style={{ padding: '0.8rem 2rem', background: stars.length === 0 ? 'var(--surface)' : 'var(--accent)', border: 'none', borderRadius: 'var(--radius-md)', color: stars.length === 0 ? 'var(--text-tertiary)' : 'white', fontSize: '0.95rem', fontWeight: '600', cursor: stars.length === 0 ? 'not-allowed' : 'pointer', fontFamily: 'inherit', transition: 'opacity 0.2s', opacity: saving ? 0.5 : 1 }}>
+                            style={{ padding: '0.8rem 2rem', background: stars.length === 0 ? 'var(--surface)' : 'var(--accent)', border: 'none', borderRadius: 'var(--radius-md)', color: stars.length === 0 ? 'var(--text-tertiary)' : '#121212', fontSize: '0.95rem', fontWeight: '600', cursor: stars.length === 0 ? 'not-allowed' : 'pointer', fontFamily: 'inherit', transition: 'opacity 0.2s', opacity: saving ? 0.5 : 1 }}>
                             {saving ? '저장 중...' : '별자리 완성'}
                         </button>
                     </div>
