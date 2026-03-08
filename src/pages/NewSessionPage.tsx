@@ -207,7 +207,7 @@ export default function NewSessionPage() {
             </div>
 
             {/* 하단 컨트롤 — 항상 보임 */}
-            <div style={{ flexShrink: 0, padding: '0.75rem clamp(1rem, 5vw, 1.5rem) max(1rem, env(safe-area-inset-bottom, 1rem))', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.6rem' }}>
+            <div style={{ flexShrink: 0, padding: '0.75rem clamp(1rem, 5vw, 1.5rem) 1.5rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.6rem', background: '#050510' }}>
                 <div style={{ display: 'flex', gap: '0.5rem', width: '100%', maxWidth: '500px' }}>
                     <input type="text" value={keywordInput} onChange={e => setKeywordInput(e.target.value)} onKeyDown={handleKeyDown}
                         placeholder="키워드를 입력하세요"
