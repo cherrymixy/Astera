@@ -365,9 +365,24 @@ export default function HomePage() {
                         }}>✕</button>
                     </div>
 
-                    <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.3)', marginBottom: '1.25rem' }}>
+                    <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.3)', marginBottom: '1rem' }}>
                         {selected.stars.length}개 · {new Date(selected.session.createdAt).toLocaleDateString('ko-KR')}
                     </div>
+
+                    {selected.stars.length > 0 && (
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', marginBottom: '1.25rem' }}>
+                            {selected.stars.map(star => (
+                                <span key={star.id} style={{
+                                    padding: '0.3rem 0.7rem', fontSize: '0.75rem',
+                                    background: 'rgba(131, 178, 224, 0.08)',
+                                    border: '1px solid rgba(131, 178, 224, 0.12)',
+                                    borderRadius: '20px', color: 'rgba(255,255,255,0.5)',
+                                }}>
+                                    {star.keyword}
+                                </span>
+                            ))}
+                        </div>
+                    )}
 
                     <button
                         onClick={() => navigate(`/session/${selected.session.id}`)}
