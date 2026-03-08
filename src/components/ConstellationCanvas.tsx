@@ -108,9 +108,9 @@ export default function ConstellationCanvas({
                 width * 0.5, height * 0.4, 0,
                 width * 0.5, height * 0.4, Math.max(width, height) * 0.8
             );
-            bgGrad.addColorStop(0, '#0d0d2b');
-            bgGrad.addColorStop(0.5, '#080820');
-            bgGrad.addColorStop(1, '#04040f');
+            bgGrad.addColorStop(0, '#0a0a16');
+            bgGrad.addColorStop(0.5, '#070710');
+            bgGrad.addColorStop(1, '#04040c');
             ctx.fillStyle = bgGrad;
             ctx.fillRect(0, 0, width, height);
 
@@ -140,10 +140,10 @@ export default function ConstellationCanvas({
                 ctx.globalAlpha = animated
                     ? 0.25 + 0.1 * Math.sin(time * 0.8)
                     : 0.3;
-                ctx.strokeStyle = 'rgba(180, 200, 255, 0.5)';
+                ctx.strokeStyle = 'rgba(160, 185, 210, 0.4)';
                 ctx.lineWidth = 1;
-                ctx.shadowColor = 'rgba(150, 180, 255, 0.3)';
-                ctx.shadowBlur = 4;
+                ctx.shadowColor = 'rgba(131, 178, 224, 0.2)';
+                ctx.shadowBlur = 3;
                 ctx.beginPath();
                 ctx.moveTo(fx, fy);
                 ctx.lineTo(tx, ty);
@@ -176,23 +176,23 @@ export default function ConstellationCanvas({
                 const glowRadius = renderSize * 4;
                 const glow = ctx.createRadialGradient(sx, sy, 0, sx, sy, glowRadius);
                 const glowAlpha = (0.15 + twinkle * 0.1) * star.brightness;
-                glow.addColorStop(0, `rgba(200, 220, 255, ${glowAlpha})`);
-                glow.addColorStop(0.3, `rgba(150, 180, 255, ${glowAlpha * 0.5})`);
+                glow.addColorStop(0, `rgba(180, 200, 225, ${glowAlpha})`);
+                glow.addColorStop(0.3, `rgba(131, 178, 224, ${glowAlpha * 0.5})`);
                 glow.addColorStop(1, 'transparent');
                 ctx.fillStyle = glow;
                 ctx.fillRect(sx - glowRadius, sy - glowRadius, glowRadius * 2, glowRadius * 2);
 
                 ctx.globalAlpha = star.brightness;
-                ctx.fillStyle = isHovered ? '#ffffff' : `hsl(220, ${60 + idx * 5}%, ${80 + twinkle * 15}%)`;
-                ctx.shadowColor = 'rgba(200, 220, 255, 0.8)';
-                ctx.shadowBlur = renderSize * 2;
+                ctx.fillStyle = isHovered ? '#ffffff' : `hsl(210, ${30 + idx * 3}%, ${82 + twinkle * 12}%)`;
+                ctx.shadowColor = 'rgba(180, 200, 225, 0.5)';
+                ctx.shadowBlur = renderSize * 1.5;
                 ctx.beginPath();
                 ctx.arc(sx, sy, renderSize, 0, Math.PI * 2);
                 ctx.fill();
 
                 if (star.size > 1.5) {
                     ctx.globalAlpha = (0.3 + twinkle * 0.2) * star.brightness;
-                    ctx.strokeStyle = 'rgba(200, 220, 255, 0.6)';
+                    ctx.strokeStyle = 'rgba(180, 200, 220, 0.4)';
                     ctx.lineWidth = 0.5;
                     const rayLen = renderSize * 3;
                     ctx.beginPath();
@@ -206,7 +206,7 @@ export default function ConstellationCanvas({
                 const showLabel = isHovered || !animated;
                 if (showLabel) {
                     ctx.globalAlpha = isHovered ? 1 : 0.7;
-                    ctx.fillStyle = '#e0e8ff';
+                    ctx.fillStyle = '#d8e0ee';
                     ctx.font = `${isHovered ? 14 : 12}px 'Space Grotesk', 'Noto Sans KR', sans-serif`;
                     ctx.textAlign = 'center';
                     ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
@@ -223,7 +223,7 @@ export default function ConstellationCanvas({
                     mouse.x, mouse.y, 0,
                     mouse.x, mouse.y, 60
                 );
-                cursorGlow.addColorStop(0, 'rgba(150, 180, 255, 0.06)');
+                cursorGlow.addColorStop(0, 'rgba(131, 178, 224, 0.05)');
                 cursorGlow.addColorStop(1, 'transparent');
                 ctx.fillStyle = cursorGlow;
                 ctx.fillRect(mouse.x - 60, mouse.y - 60, 120, 120);
@@ -235,7 +235,7 @@ export default function ConstellationCanvas({
                 width / 2, height / 2, Math.min(width, height) * 0.75
             );
             vignette.addColorStop(0, 'transparent');
-            vignette.addColorStop(1, 'rgba(4, 4, 15, 0.5)');
+            vignette.addColorStop(1, 'rgba(4, 4, 12, 0.4)');
             ctx.fillStyle = vignette;
             ctx.fillRect(0, 0, width, height);
 
